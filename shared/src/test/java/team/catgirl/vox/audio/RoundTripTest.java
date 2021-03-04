@@ -1,44 +1,44 @@
 package team.catgirl.vox.audio;
 
-import club.minnced.opus.util.OpusLibrary;
 import org.junit.Test;
 
-import javax.sound.sampled.*;
-import java.io.File;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.SourceDataLine;
+import java.io.InputStream;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
 
-import static team.catgirl.vox.audio.Encoder.FRAME_SIZE;
+import static team.catgirl.vox.audio.OpusSettings.OPUS_FRAME_SIZE;
+import static team.catgirl.vox.audio.OpusSettings.OPUS_SAMPLE_RATE;
 
 public class RoundTripTest {
+
     @Test
     public void roundTrip() throws Exception {
-        OpusLibrary.loadFromJar();
+        OpusSettings.initializeCodec();
 
+        // A classy song to play while griefing a base
         URL song = RoundTripTest.class.getClassLoader().getResource("song.wav");
 
-        AudioFormat format = new AudioFormat(48000, 16, 2, true, false);
-        SourceDataLine sourceLine = AudioSystem.getSourceDataLine(format);
-
-        sourceLine.start();
-        sourceLine.open();
-
-        try (Encoder encoder = new Encoder()) {
-            try (Decoder decoder = new Decoder()) {
-                byte[] bytes = new byte[FRAME_SIZE];
-                try (AudioInputStream audioStream = AudioSystem.getAudioInputStream(song)) {
-                    while (audioStream.read(bytes) > 0) {
-                        ByteBuffer alloc = ByteBuffer.allocateDirect(bytes.length);
-                        alloc.put(bytes);
-                        AudioPacket audioPacket = encoder.encodePacket(alloc.asShortBuffer());
-                        byte[] rawAudioBytes = decoder.decode(audioPacket);
-                        sourceLine.write(rawAudioBytes, 0, rawAudioBytes.length);
-                        sourceLine.drain();
+//        try (AudioInputStream audioStream = AudioSystem.getAudioInputStream(song)) {
+        try (InputStream audioStream = song.openStream()) {
+            int sampleSize = ((44100 / 16) * 2);
+            byte[] bytes = new byte[OPUS_FRAME_SIZE * 4];
+            try (Encoder encoder = new Encoder()) {
+                try (Decoder decoder = new Decoder()) {
+                    AudioFormat format = new AudioFormat(OPUS_SAMPLE_RATE, 16, 2, true, false);
+                    try (SourceDataLine sourceLine = AudioSystem.getSourceDataLine(format)) {
+                        sourceLine.open();
+                        sourceLine.start();
+                        while (audioStream.read(bytes) >= 0) {
+                            AudioPacket audioPacket = encoder.encodePacket(bytes);
+                            byte[] output = decoder.decode(audioPacket);
+                            sourceLine.write(output, 0, output.length);
+                        }
+                        sourceLine.stop();
                     }
                 }
             }
         }
-
     }
 }

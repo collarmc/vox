@@ -7,45 +7,40 @@ import tomp2p.opuswrapper.Opus;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
-import static tomp2p.opuswrapper.Opus.OPUS_APPLICATION_AUDIO;
+import static tomp2p.opuswrapper.Opus.*;
 
 public final class Encoder implements Closeable {
 
-    static {
-        try {
-            OpusLibrary.loadFromJar();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static final int DEFAULT_SAMPLE_RATE = 48000;
-    public static final int FRAME_SIZE = 960;
-    private static final int MAX_PACKET_SIZE = 3*1276;
 
     private final PointerByReference encoder;
-    private final ByteBuffer BUFFER = ByteBuffer.allocateDirect(MAX_PACKET_SIZE);
 
     public Encoder() {
         IntBuffer error = IntBuffer.allocate(1);
-        encoder = Opus.INSTANCE.opus_encoder_create(DEFAULT_SAMPLE_RATE, 2, OPUS_APPLICATION_AUDIO, error);
-        if (error.get() < 0) {
-            throw new AudioException("could not create encoder");
-        }
+        encoder = Opus.INSTANCE.opus_encoder_create(OpusSettings.OPUS_SAMPLE_RATE, OpusSettings.OPUS_CHANNEL_COUNT, OPUS_APPLICATION_AUDIO, error);
+        AudioException.assertOpusError(error.get());
     }
 
     /**
      * Produces an opus audio packet
-     * @param buffer of PCM audio
+     * @param rawAudio audio
      * @return byte buffer containing opus audio packet
      */
-    public AudioPacket encodePacket(ShortBuffer buffer) {
-        BUFFER.clear();
-        Opus.INSTANCE.opus_encode(encoder, buffer, FRAME_SIZE, BUFFER, MAX_PACKET_SIZE);
-        return new AudioPacket(BUFFER.duplicate());
+    public AudioPacket encodePacket(byte[] rawAudio) {
+        System.out.println(rawAudio.length);
+        ByteBuffer nonEncodedBuffer = ByteBuffer.allocateDirect(rawAudio.length);
+        nonEncodedBuffer.put(rawAudio);
+        nonEncodedBuffer.flip();
+        ByteBuffer encoded = ByteBuffer.allocateDirect(4096);
+        int result = Opus.INSTANCE.opus_encode(encoder, nonEncodedBuffer.asShortBuffer(), OpusSettings.OPUS_FRAME_SIZE, encoded, encoded.capacity());
+        AudioException.assertOpusError(result);
+        byte[] encodedByte = new byte[result];
+        encoded.get(encodedByte);
+        nonEncodedBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        return new AudioPacket(encodedByte);
     }
 
     @Override

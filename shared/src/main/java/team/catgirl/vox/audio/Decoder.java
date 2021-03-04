@@ -7,6 +7,7 @@ import tomp2p.opuswrapper.Opus;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
@@ -20,19 +21,12 @@ public final class Decoder implements Closeable {
         }
     }
 
-    private static final int DEFAULT_SAMPLE_RATE = 48000;
-    private static final int FRAME_SIZE = 960;
-    private static final int MAX_PACKET_SIZE = 3*1276;
-
     private final PointerByReference decoderPtr;
-    private final ByteBuffer BUFFER = ByteBuffer.allocateDirect(2*FRAME_SIZE);
 
     public Decoder() {
         IntBuffer error = IntBuffer.allocate(1);
-        decoderPtr = Opus.INSTANCE.opus_decoder_create(DEFAULT_SAMPLE_RATE, 2, error);
-        if (error.get() < 0) {
-            throw new AudioException("could not create decoder");
-        }
+        decoderPtr = Opus.INSTANCE.opus_decoder_create(OpusSettings.OPUS_SAMPLE_RATE, OpusSettings.OPUS_CHANNEL_COUNT, error);
+        AudioException.assertOpusError(error.get());
     }
 
     /**
@@ -41,18 +35,17 @@ public final class Decoder implements Closeable {
      * @return bytes of PCM data
      */
     public byte[] decode(AudioPacket packet) {
-        BUFFER.clear();
-        ShortBuffer output = ShortBuffer.allocate(FRAME_SIZE);
-        byte[] bytes = new byte[MAX_PACKET_SIZE];
-        packet.buffer.get(bytes);
-        Opus.INSTANCE.opus_decode(decoderPtr, bytes, bytes.length, output, FRAME_SIZE, 0);
-        for (short aShort :output.array()){
-            BUFFER.putShort(aShort);
-        }
-        byte[] decoded = new byte[BUFFER.position()];
-        BUFFER.flip();
-        BUFFER.get(decoded);
-        return decoded;
+        ByteBuffer backingBuffer = ByteBuffer.allocateDirect(4096);
+        ShortBuffer decoded = backingBuffer.asShortBuffer();
+        byte[] encodedAudio = packet.audio;
+        int result = Opus.INSTANCE.opus_decode(decoderPtr, encodedAudio, encodedAudio.length, decoded, OpusSettings.OPUS_FRAME_SIZE, 0);
+        IntBuffer lastDuration = IntBuffer.allocate(1);
+        Opus.INSTANCE.opus_decoder_ctl(decoderPtr, Opus.OPUS_GET_LAST_PACKET_DURATION_REQUEST, lastDuration);
+        System.out.println("Last duration " + lastDuration.get());
+        AudioException.assertOpusError(result);
+        byte[] bytes = new byte[backingBuffer.limit()];
+        backingBuffer.get(bytes);
+        return bytes;
     }
 
     @Override

@@ -24,5 +24,9 @@
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
         </dependency>
+        <dependency>
+            <groupId>net.beadsproject</groupId>
+            <artifactId>beads</artifactId>
+        </dependency>
     </dependencies>
 </project>
