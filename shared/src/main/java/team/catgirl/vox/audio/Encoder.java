@@ -1,9 +1,11 @@
 package team.catgirl.vox.audio;
 
+import club.minnced.opus.util.OpusLibrary;
 import com.sun.jna.ptr.PointerByReference;
 import tomp2p.opuswrapper.Opus;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
@@ -12,8 +14,16 @@ import static tomp2p.opuswrapper.Opus.OPUS_APPLICATION_AUDIO;
 
 public final class Encoder implements Closeable {
 
+    static {
+        try {
+            OpusLibrary.loadFromJar();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static final int DEFAULT_SAMPLE_RATE = 48000;
-    private static final int FRAME_SIZE = 960;
+    public static final int FRAME_SIZE = 960;
     private static final int MAX_PACKET_SIZE = 3*1276;
 
     private final PointerByReference encoder;

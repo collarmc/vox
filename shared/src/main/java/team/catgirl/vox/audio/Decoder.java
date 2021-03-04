@@ -1,14 +1,25 @@
 package team.catgirl.vox.audio;
 
+import club.minnced.opus.util.OpusLibrary;
 import com.sun.jna.ptr.PointerByReference;
 import tomp2p.opuswrapper.Opus;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
 public final class Decoder implements Closeable {
+
+    static {
+        try {
+            OpusLibrary.loadFromJar();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static final int DEFAULT_SAMPLE_RATE = 48000;
     private static final int FRAME_SIZE = 960;
     private static final int MAX_PACKET_SIZE = 3*1276;
@@ -32,12 +43,16 @@ public final class Decoder implements Closeable {
     public byte[] decode(AudioPacket packet) {
         BUFFER.clear();
         ShortBuffer output = ShortBuffer.allocate(FRAME_SIZE);
-        byte[] bytes = packet.buffer.array();
+        byte[] bytes = new byte[MAX_PACKET_SIZE];
+        packet.buffer.get(bytes);
         Opus.INSTANCE.opus_decode(decoderPtr, bytes, bytes.length, output, FRAME_SIZE, 0);
         for (short aShort :output.array()){
             BUFFER.putShort(aShort);
         }
-        return BUFFER.array();
+        byte[] decoded = new byte[BUFFER.position()];
+        BUFFER.flip();
+        BUFFER.get(decoded);
+        return decoded;
     }
 
     @Override
