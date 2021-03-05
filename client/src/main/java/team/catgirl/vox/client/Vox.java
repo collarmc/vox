@@ -3,6 +3,7 @@ package team.catgirl.vox.client;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.WebSocket;
+import team.catgirl.vox.audio.OpusSettings;
 import team.catgirl.vox.audio.devices.InputDevice;
 import team.catgirl.vox.audio.devices.OutputDevice;
 
@@ -11,6 +12,11 @@ import java.io.IOException;
 import java.util.UUID;
 
 public final class Vox implements Closeable {
+
+    static {
+        OpusSettings.initializeCodec();
+    }
+
     private final OkHttpClient http;
     private final String baseUrl;
     private final AudioSenderSocket senderSocket;
@@ -22,7 +28,7 @@ public final class Vox implements Closeable {
         this.http = http;
         this.baseUrl = baseUrl;
         this.senderSocket = new AudioSenderSocket(inputDevice, identity, channel);
-        this.receiverSocket = new AudioReceiverSocket(outputDevice);
+        this.receiverSocket = new AudioReceiverSocket(outputDevice, identity, channel);
     }
 
     public void connect() {

@@ -16,6 +16,12 @@ public class WebServer {
 
         webSocket("/api/1/audio/send", subscriberSocket);
         webSocket("/api/1/audio/listen", producerSocket);
+
+        get("/", (request, response) -> "Vox");
+
+        exception(Exception.class, (exception, request, response) -> {
+            exception.printStackTrace();
+        });
     }
 
     private static int httpPort() {

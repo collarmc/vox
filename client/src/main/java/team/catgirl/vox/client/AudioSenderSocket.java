@@ -63,26 +63,30 @@ public class AudioSenderSocket extends WebSocketListener implements Closeable {
 
         @Override
         public void run() {
-            while (true) {
-                byte[] buff = new byte[OPUS_FRAME_SIZE * 4];
-                int read = inputDevice.getLine().read(buff, 0, buff.length);
-                AudioPacket audioPacket;
-                if (read < 0) {
-                    audioPacket = AudioPacket.SILENCE;
-                } else {
-                    audioPacket = encoder.encodePacket(buff);
+            try {
+                while (true) {
+                    byte[] buff = new byte[OPUS_FRAME_SIZE * 4];
+                    int read = inputDevice.getLine().read(buff, 0, buff.length);
+                    AudioPacket audioPacket;
+                    if (read < 0) {
+                        audioPacket = AudioPacket.SILENCE;
+                    } else {
+                        audioPacket = encoder.encodePacket(buff);
+                    }
+                    IncomingVoicePacket packet = new IncomingVoicePacket(identity, channel, audioPacket.serialize());
+                    try {
+                        webSocket.send(ByteString.of(packet.serialize()));
+                    } catch (IOException e) {
+                        throw new IllegalStateException("could not serialize packet");
+                    }
+                    try {
+                        Thread.sleep(TimeUnit.MILLISECONDS.toMillis(50));
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
-                IncomingVoicePacket packet = new IncomingVoicePacket(identity, channel, audioPacket.serialize());
-                try {
-                    webSocket.send(ByteString.of(packet.serialize()));
-                } catch (IOException e) {
-                    throw new IllegalStateException("could not serialize packet");
-                }
-                try {
-                    Thread.sleep(TimeUnit.MILLISECONDS.toMillis(50));
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+            } catch (Throwable e) {
+                e.printStackTrace();
             }
         }
     }

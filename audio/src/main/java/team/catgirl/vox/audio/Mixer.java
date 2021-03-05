@@ -28,22 +28,22 @@ public class Mixer implements Closeable {
     }
 
     public AudioPacket mix(List<AudioPacket> packets) {
-        for (AudioPacket packet : packets) {
-            packet.audio.rewind();
-            byte[] buff = new byte[packet.audio.remaining()];
-            packet.audio.get(buff);
-            int result = Opus.INSTANCE.opus_repacketizer_cat(opusRepacketizerPrt, buff, buff.length);
-            if (result != Opus.OPUS_OK) {
-                throw new AudioException("could not mix packets");
-            }
-        }
-        ByteBuffer buffer = ByteBuffer.allocateDirect(1276);
-        int size = Opus.INSTANCE.opus_repacketizer_out(this.opusRepacketizerPrt, buffer, 1276);
-        if (size < 0) {
-            throw new AudioException("could not mix audio");
-        }
-        buffer.flip();
-        return new AudioPacket(buffer);
+        return packets.stream().findFirst().orElse(AudioPacket.SILENCE);
+//        for (AudioPacket packet : packets) {
+//            int result = Opus.INSTANCE.opus_repacketizer_cat(opusRepacketizerPrt, packet.audio, packet.audio.length);
+//            if (result != Opus.OPUS_OK) {
+//                throw new AudioException("could not mix packets");
+//            }
+//        }
+//        ByteBuffer buffer = ByteBuffer.allocateDirect(1276);
+//        int size = Opus.INSTANCE.opus_repacketizer_out(this.opusRepacketizerPrt, buffer, 1276);
+//        if (size < 0) {
+//            throw new AudioException("could not mix audio");
+//        }
+//        buffer.flip();
+//        byte[] out = new byte[buffer.limit()];
+//        buffer.get(out);
+//        return new AudioPacket(out);
     }
 
     @Override

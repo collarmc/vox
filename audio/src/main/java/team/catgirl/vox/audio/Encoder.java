@@ -1,20 +1,26 @@
 package team.catgirl.vox.audio;
 
+import club.minnced.opus.util.OpusLibrary;
 import com.sun.jna.ptr.PointerByReference;
 import tomp2p.opuswrapper.Opus;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
+
+import static tomp2p.opuswrapper.Opus.*;
 
 public final class Encoder implements Closeable {
+
 
     private final PointerByReference encoder;
 
     public Encoder() {
         IntBuffer error = IntBuffer.allocate(1);
-        encoder = Opus.INSTANCE.opus_encoder_create(OpusSettings.OPUS_SAMPLE_RATE, OpusSettings.OPUS_CHANNEL_COUNT, Opus.OPUS_APPLICATION_AUDIO, error);
+        encoder = Opus.INSTANCE.opus_encoder_create(OpusSettings.OPUS_SAMPLE_RATE, OpusSettings.OPUS_CHANNEL_COUNT, OPUS_APPLICATION_AUDIO, error);
         AudioException.assertOpusError(error.get());
     }
 
@@ -24,14 +30,15 @@ public final class Encoder implements Closeable {
      * @return byte buffer containing opus audio packet
      */
     public AudioPacket encodePacket(byte[] rawAudio) {
-        System.out.println(rawAudio.length);
         ByteBuffer nonEncodedBuffer = ByteBuffer.allocateDirect(rawAudio.length);
         nonEncodedBuffer.put(rawAudio);
-        nonEncodedBuffer.rewind();
+        nonEncodedBuffer.flip();
         ByteBuffer encoded = ByteBuffer.allocateDirect(4096);
         int result = Opus.INSTANCE.opus_encode(encoder, nonEncodedBuffer.asShortBuffer(), OpusSettings.OPUS_FRAME_SIZE, encoded, encoded.capacity());
         AudioException.assertOpusError(result);
-        return new AudioPacket(encoded);
+        byte[] encodedByte = new byte[result];
+        encoded.get(encodedByte);
+        return new AudioPacket(encodedByte);
     }
 
     @Override

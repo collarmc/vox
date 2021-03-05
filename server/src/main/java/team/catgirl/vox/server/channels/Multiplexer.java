@@ -40,6 +40,8 @@ public class Multiplexer {
                 audioPackets = audioPackets == null ? new LinkedBlockingDeque<>(500) : audioPackets;
                 if (!audioPackets.offer(audioPacket)) {
                     LOGGER.log(Level.WARNING, "Dropped packet from " + packet.identity + " destined for channel " + packet.channel);
+                } else {
+                    LOGGER.log(Level.INFO, "Received packet from " + packet.identity + " destined for channel " + packet.channel);
                 }
                 return audioPackets;
             });
@@ -49,7 +51,7 @@ public class Multiplexer {
         if (channelState != null) {
             Future<?> future = consumerExecutor.submit(new ChannelProcessor(channelState, packetConsumer));
             channelProcessors.put(channelState.id, future);
-        }
+        };
     }
 
     private static class ChannelProcessor implements Runnable, Closeable {
@@ -64,23 +66,32 @@ public class Multiplexer {
 
         @Override
         public void run() {
-            while (true) {
-                List<AudioPacket> packetList = channel.packetQueues.values().stream()
-                        .map(Queue::poll)
-                        .filter(audioPacket -> !Objects.isNull(audioPacket))
-                        .collect(Collectors.toList());
-                if (packetList.isEmpty()) {
-                    packetConsumer.accept(channel.id, AudioPacket.SILENCE);
-                } else {
-                    AudioPacket mixedPacket = mixer.mix(packetList);
-                    packetConsumer.accept(channel.id, mixedPacket);
+            try {
+                while (true) {
+                    List<AudioPacket> packetList = channel.packetQueues.values().stream()
+                            .map(audioPackets -> {
+                                System.out.println("before " + audioPackets.size());
+                                AudioPacket packet = audioPackets.poll();
+                                System.out.println("after " + audioPackets.size());
+                                return packet;
+                            })
+                            .filter(audioPacket -> !Objects.isNull(audioPacket))
+                            .collect(Collectors.toList());
+                    if (packetList.isEmpty()) {
+//                        packetConsumer.accept(channel.id, AudioPacket.SILENCE);
+                    } else {
+                        AudioPacket mixedPacket = mixer.mix(packetList);
+                        packetConsumer.accept(channel.id, mixedPacket);
+                    }
+                    try {
+                        Thread.sleep(20);
+                    } catch (InterruptedException e) {
+                        packetConsumer.accept(channel.id, null);
+                        throw new RuntimeException(e);
+                    }
                 }
-                try {
-                    Thread.sleep(20);
-                } catch (InterruptedException e) {
-                    packetConsumer.accept(channel.id, null);
-                    throw new RuntimeException(e);
-                }
+            } catch (Throwable e) {
+                e.printStackTrace();
             }
         }
 
@@ -92,7 +103,7 @@ public class Multiplexer {
 
     private static class ChannelState {
         public final UUID id;
-        public final ConcurrentMap<UUID, Queue<AudioPacket>> packetQueues;
+        public final ConcurrentMap<UUID, LinkedBlockingDeque<AudioPacket>> packetQueues;
 
         public ChannelState(UUID id) {
             this.id = id;
