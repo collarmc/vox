@@ -1,14 +1,14 @@
 package team.catgirl.vox.server.audio;
 
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
-import team.catgirl.vox.audio.AudioPacket;
+import team.catgirl.vox.protocol.AudioPacket;
 import team.catgirl.vox.io.IO;
+import team.catgirl.vox.protocol.AudioStreamPacket;
 import team.catgirl.vox.protocol.IdentifyPacket;
-import team.catgirl.vox.protocol.OutgoingVoicePacket;
+import team.catgirl.vox.protocol.OutputAudioPacket;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,9 +22,8 @@ public class AudioProducerSocket {
 
     private final ConcurrentMap<UUID, Set<Session>> channelSessions = new ConcurrentHashMap<>();
 
-    public void consume(UUID channel, AudioPacket packet) {
-        System.out.println("Packet size " + packet.serialize().length);
-        OutgoingVoicePacket voicePacket = new OutgoingVoicePacket(channel, packet.serialize());
+    public void consume(UUID channel, List<AudioStreamPacket> packets) {
+        OutputAudioPacket voicePacket = new OutputAudioPacket(channel, packets);
         byte[] bytes;
         try {
             bytes = voicePacket.serialize();

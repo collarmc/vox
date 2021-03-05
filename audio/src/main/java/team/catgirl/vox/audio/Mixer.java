@@ -2,14 +2,14 @@ package team.catgirl.vox.audio;
 
 import club.minnced.opus.util.OpusLibrary;
 import com.sun.jna.ptr.PointerByReference;
+import team.catgirl.vox.protocol.AudioPacket;
+import team.catgirl.vox.protocol.AudioStreamPacket;
 import tomp2p.opuswrapper.Opus;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.List;
-
-import static tomp2p.opuswrapper.Opus.OPUS_OK;
+import java.util.UUID;
 
 public class Mixer implements Closeable {
 
@@ -27,8 +27,9 @@ public class Mixer implements Closeable {
         this.opusRepacketizerPrt = Opus.INSTANCE.opus_repacketizer_create();
     }
 
-    public AudioPacket mix(List<AudioPacket> packets) {
-        return packets.stream().findFirst().orElse(AudioPacket.SILENCE);
+    public AudioPacket mix(List<AudioStreamPacket> packets) {
+        // TODO: mix packets instead of just returning the first one
+        return packets.stream().findFirst().map(streamPacket -> streamPacket.audio).orElse(AudioPacket.SILENCE);
 //        for (AudioPacket packet : packets) {
 //            int result = Opus.INSTANCE.opus_repacketizer_cat(opusRepacketizerPrt, packet.audio, packet.audio.length);
 //            if (result != Opus.OPUS_OK) {

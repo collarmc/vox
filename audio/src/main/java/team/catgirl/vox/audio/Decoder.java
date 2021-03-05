@@ -2,12 +2,12 @@ package team.catgirl.vox.audio;
 
 import club.minnced.opus.util.OpusLibrary;
 import com.sun.jna.ptr.PointerByReference;
+import team.catgirl.vox.protocol.AudioPacket;
 import tomp2p.opuswrapper.Opus;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 

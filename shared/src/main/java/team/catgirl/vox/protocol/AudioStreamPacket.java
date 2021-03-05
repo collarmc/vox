@@ -5,27 +5,29 @@ import team.catgirl.vox.io.IO;
 import java.io.*;
 import java.util.UUID;
 
-public final class OutgoingVoicePacket {
+/**
+ * Audio packet coming from a caller
+ */
+public final class AudioStreamPacket {
     private static final int VERSION = 1;
-    public final UUID channel;
-    public final byte[] audio;
 
-    public OutgoingVoicePacket(UUID channel, byte[] audio) {
-        this.channel = channel;
+    public final UUID owner;
+    public final AudioPacket audio;
+
+    public AudioStreamPacket(UUID owner, AudioPacket audio) {
+        this.owner = owner;
         this.audio = audio;
     }
 
-    public OutgoingVoicePacket(byte[] bytes) throws IOException {
+    public AudioStreamPacket(byte[] bytes) throws IOException {
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes)) {
             try (DataInputStream dataStream = new DataInputStream(inputStream)) {
                 int version = dataStream.readInt();
                 if (version != VERSION) {
                     throw new IllegalStateException("unknown version " + version);
                 }
-                long channelHigh = dataStream.readLong();
-                long channelLow = dataStream.readLong();
-                channel = new UUID(channelHigh, channelLow);
-                audio = IO.readBytes(dataStream);
+                owner = IO.readUUID(dataStream);
+                audio = new AudioPacket(IO.readBytes(dataStream));
             }
         }
     }
@@ -34,9 +36,8 @@ public final class OutgoingVoicePacket {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             try (DataOutputStream dataStream = new DataOutputStream(outputStream)) {
                 dataStream.writeInt(VERSION);
-                dataStream.writeLong(channel.getMostSignificantBits());
-                dataStream.writeLong(channel.getLeastSignificantBits());
-                IO.writeBytes(dataStream, audio);
+                IO.writeUUID(dataStream, owner);
+                IO.writeBytes(dataStream, audio.serialize());
             }
             return outputStream.toByteArray();
         }

@@ -5,15 +5,14 @@ import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okio.ByteString;
 import org.jetbrains.annotations.NotNull;
-import team.catgirl.vox.audio.AudioPacket;
+import team.catgirl.vox.protocol.AudioPacket;
 import team.catgirl.vox.audio.Encoder;
 import team.catgirl.vox.audio.devices.InputDevice;
-import team.catgirl.vox.protocol.IncomingVoicePacket;
+import team.catgirl.vox.protocol.SourceAudioPacket;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static team.catgirl.vox.audio.OpusSettings.OPUS_FRAME_SIZE;
@@ -73,7 +72,7 @@ public class AudioSenderSocket extends WebSocketListener implements Closeable {
                     } else {
                         audioPacket = encoder.encodePacket(buff);
                     }
-                    IncomingVoicePacket packet = new IncomingVoicePacket(identity, channel, audioPacket.serialize());
+                    SourceAudioPacket packet = new SourceAudioPacket(identity, channel, audioPacket);
                     try {
                         webSocket.send(ByteString.of(packet.serialize()));
                     } catch (IOException e) {

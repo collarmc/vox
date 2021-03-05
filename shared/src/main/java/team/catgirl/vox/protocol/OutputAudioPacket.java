@@ -3,30 +3,37 @@ package team.catgirl.vox.protocol;
 import team.catgirl.vox.io.IO;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
-/**
- * Sent to the Audio producer socket to identify who we are and what stream we are subscribing to
- */
-public final class IdentifyPacket {
+public final class OutputAudioPacket {
     private static final int VERSION = 1;
-    public final UUID identity;
     public final UUID channel;
 
-    public IdentifyPacket(UUID identity, UUID channel) {
-        this.identity = identity;
+    /**
+     * Audio streams from various clients
+     */
+    public final List<AudioStreamPacket> streamPackets;
+
+    public OutputAudioPacket(UUID channel, List<AudioStreamPacket> streamPackets) {
         this.channel = channel;
+        this.streamPackets = streamPackets;
     }
 
-    public IdentifyPacket(byte[] bytes) throws IOException {
+    public OutputAudioPacket(byte[] bytes) throws IOException {
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes)) {
             try (DataInputStream dataStream = new DataInputStream(inputStream)) {
                 int version = dataStream.readInt();
                 if (version != VERSION) {
                     throw new IllegalStateException("unknown version " + version);
                 }
-                identity = IO.readUUID(dataStream);
                 channel = IO.readUUID(dataStream);
+                int packetCount = dataStream.readInt();
+                this.streamPackets = new ArrayList<>();
+                for (int i = 0; i < packetCount; i++) {
+                    streamPackets.add(new AudioStreamPacket(IO.readBytes(dataStream)));
+                }
             }
         }
     }
@@ -35,8 +42,11 @@ public final class IdentifyPacket {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             try (DataOutputStream dataStream = new DataOutputStream(outputStream)) {
                 dataStream.writeInt(VERSION);
-                IO.writeUUID(dataStream, identity);
                 IO.writeUUID(dataStream, channel);
+                dataStream.writeInt(streamPackets.size());
+                for (AudioStreamPacket streamPacket : streamPackets) {
+                    IO.writeBytes(dataStream, streamPacket.serialize());
+                }
             }
             return outputStream.toByteArray();
         }

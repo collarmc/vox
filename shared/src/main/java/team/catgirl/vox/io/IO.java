@@ -2,6 +2,7 @@ package team.catgirl.vox.io;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.util.UUID;
 
 public final class IO {
     /**
@@ -30,6 +31,27 @@ public final class IO {
             bytes[i] = is.readByte();
         }
         return bytes;
+    }
+
+    /**
+     * Write UUID to stream
+     * @param os to write to
+     * @param uuid to write
+     * @throws IOException on error
+     */
+    public static void writeUUID(DataOutputStream os, UUID uuid) throws IOException {
+        os.writeLong(uuid.getMostSignificantBits());
+        os.writeLong(uuid.getLeastSignificantBits());
+    }
+
+    /**
+     * Read UUID from stream
+     * @param is to read
+     * @return uuid
+     * @throws IOException on error
+     */
+    public static UUID readUUID(DataInputStream is) throws IOException {
+        return new UUID(is.readLong(), is.readLong());
     }
 
     /**

@@ -1,6 +1,7 @@
 package team.catgirl.vox.audio;
 
 import org.junit.Test;
+import team.catgirl.vox.protocol.AudioPacket;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;

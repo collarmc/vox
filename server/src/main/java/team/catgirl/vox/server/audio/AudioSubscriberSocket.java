@@ -5,7 +5,7 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import team.catgirl.vox.io.IO;
-import team.catgirl.vox.protocol.IncomingVoicePacket;
+import team.catgirl.vox.protocol.SourceAudioPacket;
 import team.catgirl.vox.server.channels.Multiplexer;
 
 import java.io.IOException;
@@ -28,7 +28,7 @@ public class AudioSubscriberSocket {
     @OnWebSocketMessage
     public void receivePacket(Session session, InputStream stream) throws IOException {
         byte[] bytes = IO.toByteArray(stream);
-        IncomingVoicePacket packet = new IncomingVoicePacket(bytes);
+        SourceAudioPacket packet = new SourceAudioPacket(bytes);
         multiplexer.receive(packet);
     }
 }

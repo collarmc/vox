@@ -3,8 +3,8 @@ package team.catgirl.vox.audio.devices;
 import javax.sound.sampled.Mixer;
 
 public abstract class Device<T> {
-    private T line;
-    private Mixer.Info info;
+    private final T line;
+    private final Mixer.Info info;
 
     public Device(T line, Mixer.Info info) {
         this.line = line;

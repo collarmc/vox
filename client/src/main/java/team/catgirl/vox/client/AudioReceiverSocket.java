@@ -6,11 +6,12 @@ import okhttp3.WebSocketListener;
 import okio.ByteString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import team.catgirl.vox.audio.AudioPacket;
+import team.catgirl.vox.audio.Mixer;
+import team.catgirl.vox.protocol.AudioPacket;
 import team.catgirl.vox.audio.Decoder;
 import team.catgirl.vox.audio.devices.OutputDevice;
 import team.catgirl.vox.protocol.IdentifyPacket;
-import team.catgirl.vox.protocol.OutgoingVoicePacket;
+import team.catgirl.vox.protocol.OutputAudioPacket;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -22,6 +23,7 @@ public class AudioReceiverSocket extends WebSocketListener implements Closeable 
     private final UUID identity;
     private final UUID channel;
     private final Decoder decoder = new Decoder();
+    private final Mixer mixer = new Mixer();
 
     public AudioReceiverSocket(OutputDevice outputDevice, UUID identity, UUID channel) {
         this.outputDevice = outputDevice;
@@ -49,10 +51,10 @@ public class AudioReceiverSocket extends WebSocketListener implements Closeable 
     @Override
     public void onMessage(@NotNull WebSocket webSocket, @NotNull ByteString bytes) {
         try {
-            OutgoingVoicePacket packet = new OutgoingVoicePacket(bytes.toByteArray());
-            AudioPacket audioPacket = AudioPacket.deserialize(packet.audio);
+            OutputAudioPacket packet = new OutputAudioPacket(bytes.toByteArray());
+            AudioPacket audioPacket = mixer.mix(packet.streamPackets);
             byte[] pcm = decoder.decode(audioPacket);
-            System.out.println("Packet size " + packet.audio.length);
+            System.out.println("Packet size " + audioPacket.audio.length);
             outputDevice.getLine().write(pcm, 0, pcm.length);
         } catch (Throwable e) {
             e.printStackTrace();
@@ -63,5 +65,6 @@ public class AudioReceiverSocket extends WebSocketListener implements Closeable 
     @Override
     public void close() throws IOException {
         decoder.close();
+        mixer.close();
     }
 }

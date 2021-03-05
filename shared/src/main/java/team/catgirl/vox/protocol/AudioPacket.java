@@ -1,16 +1,19 @@
-package team.catgirl.vox.audio;
+package team.catgirl.vox.protocol;
 
 import team.catgirl.vox.io.IO;
 
 import java.io.*;
 
+/**
+ * A tiny bit of Opus encoded audio
+ */
 public final class AudioPacket {
 
     public static AudioPacket SILENCE = new AudioPacket(new byte[0]);
 
     private static final int VERSION = 1;
 
-    final byte[] audio;
+    public final byte[] audio;
 
     public AudioPacket(byte[] audio) {
         this.audio = audio;
