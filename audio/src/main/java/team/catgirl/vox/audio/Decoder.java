@@ -37,8 +37,10 @@ public final class Decoder implements Closeable {
     public byte[] decode(AudioPacket packet) {
         ByteBuffer backingBuffer = ByteBuffer.allocateDirect(4096);
         ShortBuffer decoded = backingBuffer.asShortBuffer();
-        byte[] encodedAudio = packet.audio;
-        int result = Opus.INSTANCE.opus_decode(decoderPtr, encodedAudio, encodedAudio.length, decoded, OpusSettings.OPUS_FRAME_SIZE, 0);
+        packet.audio.rewind();
+        byte[] buff = new byte[packet.audio.remaining()];
+        packet.audio.get(buff);
+        int result = Opus.INSTANCE.opus_decode(decoderPtr, buff, buff.length, decoded, OpusSettings.OPUS_FRAME_SIZE, 0);
         IntBuffer lastDuration = IntBuffer.allocate(1);
         Opus.INSTANCE.opus_decoder_ctl(decoderPtr, Opus.OPUS_GET_LAST_PACKET_DURATION_REQUEST, lastDuration);
         System.out.println("Last duration " + lastDuration.get());

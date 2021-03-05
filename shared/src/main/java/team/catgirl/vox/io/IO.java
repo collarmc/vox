@@ -58,5 +58,20 @@ public final class IO {
         }
     }
 
+    /**
+     * Copy stream to byte array
+     * @param input to copy
+     * @return contents
+     * @throws IOException if stream failed to be read
+     */
+    public static byte[] toByteArray(InputStream input) throws IOException {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        byte[] buf = new byte[1024];
+        for (int n = input.read(buf); n != -1; n = input.read(buf)) {
+            os.write(buf, 0, n);
+        }
+        return os.toByteArray();
+    }
+
     public IO() {}
 }

@@ -3,13 +3,17 @@ package team.catgirl.vox.audio;
 import team.catgirl.vox.io.IO;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 
 public final class AudioPacket {
+
+    public static AudioPacket SILENCE = new AudioPacket(ByteBuffer.allocate(0));
+
     private static final int VERSION = 1;
 
-    final byte[] audio;
+    final ByteBuffer audio;
 
-    public AudioPacket(byte[] audio) {
+    public AudioPacket(ByteBuffer audio) {
         this.audio = audio;
     }
 
@@ -20,7 +24,10 @@ public final class AudioPacket {
                 if (version != VERSION) {
                     throw new IllegalArgumentException("unknown audio packet version " + version);
                 }
-                return new AudioPacket(IO.readBytes(dataStream));
+                byte[] buff = IO.readBytes(dataStream);
+                ByteBuffer buffer = ByteBuffer.allocateDirect(buff.length);
+                buffer.put(buff);
+                return new AudioPacket(buffer);
             }
         } catch (IOException e) {
             throw new IllegalArgumentException("could not deserialize audio packet", e);
@@ -31,7 +38,10 @@ public final class AudioPacket {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             try (DataOutputStream dataStream = new DataOutputStream(outputStream)) {
                 dataStream.writeInt(VERSION);
-                IO.writeBytes(dataStream, audio);
+                byte[] buff = new byte[audio.limit()];
+                audio.position(audio.limit());
+                audio.get(buff);
+                IO.writeBytes(dataStream, buff);
             }
             return outputStream.toByteArray();
         } catch (IOException e) {

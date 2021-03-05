@@ -29,9 +29,11 @@ public class Mixer implements Closeable {
 
     public AudioPacket mix(List<AudioPacket> packets) {
         for (AudioPacket packet : packets) {
-            byte[] bytes = packet.audio;
-            int result = Opus.INSTANCE.opus_repacketizer_cat(opusRepacketizerPrt, bytes, bytes.length);
-            if (result != OPUS_OK) {
+            packet.audio.rewind();
+            byte[] buff = new byte[packet.audio.remaining()];
+            packet.audio.get(buff);
+            int result = Opus.INSTANCE.opus_repacketizer_cat(opusRepacketizerPrt, buff, buff.length);
+            if (result != Opus.OPUS_OK) {
                 throw new AudioException("could not mix packets");
             }
         }
@@ -40,8 +42,8 @@ public class Mixer implements Closeable {
         if (size < 0) {
             throw new AudioException("could not mix audio");
         }
-//        return new AudioPacket(buffer);
-        return null;
+        buffer.flip();
+        return new AudioPacket(buffer);
     }
 
     @Override
