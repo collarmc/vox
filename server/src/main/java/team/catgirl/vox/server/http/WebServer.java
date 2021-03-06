@@ -73,13 +73,13 @@ public class WebServer {
                 }
             });
             post("/permit/accept", (request, response) -> {
-                PermitAccessRequest req = mapper.readValue(request.bodyAsBytes(), PermitAccessRequest.class);
+                PermitAccessRequest req = mapper.readValue(request.body(), PermitAccessRequest.class);
                 return channels.permit(req);
-            });
+            }, model -> Utils.jsonMapper().writeValueAsString(model));
             post("/permit/deny", (request, response) -> {
-                DenyAccessRequest req = mapper.readValue(request.bodyAsBytes(), DenyAccessRequest.class);
+                DenyAccessRequest req = mapper.readValue(request.body(), DenyAccessRequest.class);
                 return channels.deny(req);
-            });
+            }, model -> Utils.jsonMapper().writeValueAsString(model));
         });
 
         get("/", (request, response) -> "Vox");

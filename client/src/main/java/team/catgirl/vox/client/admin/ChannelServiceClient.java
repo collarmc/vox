@@ -49,20 +49,18 @@ public final class ChannelServiceClient implements ChannelService {
     }
 
     private <T> T httpPost(String path, Object post, Class<T> tClass) {
-        byte[] bytes;
+        String bytes;
         try {
-            bytes = Utils.jsonMapper().writeValueAsBytes(post);
+            bytes = Utils.jsonMapper().writeValueAsString(post);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException(e);
         }
         URL url = baseUrl.withPath(path).toUrl();
-        System.out.println(url);
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("Authorization", "Bearer" + password)
                 .post(RequestBody.create(bytes, MediaType.get("application/json")))
                 .build();
-
         try (Response response = http.newCall(request).execute()) {
             if (response.code() != 200) {
                 throw new RuntimeException("bad response " + response.code());

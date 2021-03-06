@@ -13,11 +13,11 @@ import java.util.function.Function;
 
 import static tomp2p.opuswrapper.Opus.*;
 
-public final class CopusEncoder implements Encoder {
+public final class OpusEncoder implements Encoder {
 
     private final PointerByReference encoder;
 
-    public CopusEncoder() {
+    public OpusEncoder() {
         IntBuffer error = IntBuffer.allocate(1);
         encoder = Opus.INSTANCE.opus_encoder_create(OpusSettings.OPUS_SAMPLE_RATE, OpusSettings.OPUS_CHANNEL_COUNT, OPUS_APPLICATION_AUDIO, error);
         AudioException.assertOpusError(error.get());

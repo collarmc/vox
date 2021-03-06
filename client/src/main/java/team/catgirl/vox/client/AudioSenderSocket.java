@@ -7,7 +7,7 @@ import okio.ByteString;
 import org.jetbrains.annotations.NotNull;
 import team.catgirl.vox.api.Caller;
 import team.catgirl.vox.api.Channel;
-import team.catgirl.vox.audio.opus.CopusEncoder;
+import team.catgirl.vox.audio.opus.OpusEncoder;
 import team.catgirl.vox.security.Cipher;
 import team.catgirl.vox.protocol.AudioPacket;
 import team.catgirl.vox.audio.Encoder;
@@ -30,7 +30,7 @@ class AudioSenderSocket extends WebSocketListener implements Closeable {
     private final Cipher cipher;
     private final Caller caller;
     private final Channel channel;
-    private final Encoder encoder = new CopusEncoder();
+    private final Encoder encoder = new OpusEncoder();
     private Thread worker;
 
     public AudioSenderSocket(InputDevice inputDevice, Cipher cipher, Caller caller, Channel channel) {

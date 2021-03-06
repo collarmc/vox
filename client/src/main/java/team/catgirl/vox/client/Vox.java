@@ -1,5 +1,6 @@
 package team.catgirl.vox.client;
 
+import io.mikael.urlbuilder.UrlBuilder;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.WebSocket;
@@ -20,7 +21,7 @@ public final class Vox implements Closeable {
     }
 
     private final OkHttpClient http;
-    private final String baseUrl;
+    private final UrlBuilder baseUrl;
     private final AudioSenderSocket senderSocket;
     private final AudioReceiverSocket receiverSocket;
     WebSocket audioSenderSocket;
@@ -28,7 +29,7 @@ public final class Vox implements Closeable {
 
     public Vox(OkHttpClient http, String baseUrl, byte[] token, Caller identity, Channel channel, InputDevice inputDevice, OutputDevice outputDevice, Cipher cipher) {
         this.http = http;
-        this.baseUrl = baseUrl;
+        this.baseUrl = UrlBuilder.fromString(baseUrl);
         this.senderSocket = new AudioSenderSocket(inputDevice, cipher, identity, channel);
         this.receiverSocket = new AudioReceiverSocket(outputDevice, cipher, identity, channel, token);
     }
@@ -37,9 +38,9 @@ public final class Vox implements Closeable {
      * Connects to the Channel and starts streaming
      */
     public void connect() {
-        audioReceiverSocket = http.newWebSocket(new Request.Builder().url(baseUrl + "/api/1/audio/listen").build(), receiverSocket);
+        audioReceiverSocket = http.newWebSocket(new Request.Builder().url(baseUrl.withPath("api/1/audio/listen").toUrl()).build(), receiverSocket);
         audioReceiverSocket.request();
-        audioSenderSocket = http.newWebSocket(new Request.Builder().url(baseUrl + "/api/1/audio/send").build(), senderSocket);
+        audioSenderSocket = http.newWebSocket(new Request.Builder().url(baseUrl.withPath("api/1/audio/send").toUrl()).build(), senderSocket);
         audioSenderSocket.request();
     }
 

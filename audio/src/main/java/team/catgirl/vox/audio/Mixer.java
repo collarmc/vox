@@ -1,5 +1,6 @@
 package team.catgirl.vox.audio;
 
+import team.catgirl.vox.api.Caller;
 import team.catgirl.vox.protocol.AudioPacket;
 import team.catgirl.vox.protocol.AudioStreamPacket;
 import team.catgirl.vox.protocol.OutputAudioPacket;
@@ -18,4 +19,8 @@ public interface Mixer extends Closeable {
      * @return packet ready for playback
      */
     AudioPacket mix(OutputAudioPacket packets, Function<AudioStreamPacket, byte[]> transformer);
+
+    void mute(Caller caller);
+
+    void unmute(Caller caller);
 }

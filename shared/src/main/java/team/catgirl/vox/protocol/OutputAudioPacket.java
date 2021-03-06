@@ -23,7 +23,6 @@ public final class OutputAudioPacket {
     }
 
     public OutputAudioPacket(byte[] bytes) throws IOException {
-        System.out.println(bytes.length);
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes)) {
             try (DataInputStream dataStream = new DataInputStream(inputStream)) {
                 int version = dataStream.readInt();
@@ -51,7 +50,6 @@ public final class OutputAudioPacket {
                 }
             }
             byte[] bytes = outputStream.toByteArray();
-            System.out.println(bytes.length);
             return bytes;
         }
     }

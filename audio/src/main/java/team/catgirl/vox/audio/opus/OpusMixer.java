@@ -1,6 +1,7 @@
 package team.catgirl.vox.audio.opus;
 
 import com.sun.jna.ptr.PointerByReference;
+import team.catgirl.vox.api.Caller;
 import team.catgirl.vox.audio.AudioException;
 import team.catgirl.vox.audio.Mixer;
 import team.catgirl.vox.protocol.AudioPacket;
@@ -45,6 +46,16 @@ public class OpusMixer implements Mixer {
         byte[] out = new byte[buffer.limit()];
         buffer.get(out);
         return AudioPacket.fromEncodedBytes(out);
+    }
+
+    @Override
+    public void mute(Caller caller) {
+
+    }
+
+    @Override
+    public void unmute(Caller caller) {
+
     }
 
     @Override

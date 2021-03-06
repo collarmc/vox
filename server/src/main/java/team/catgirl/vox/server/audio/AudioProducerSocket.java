@@ -2,6 +2,7 @@ package team.catgirl.vox.server.audio;
 
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import team.catgirl.vox.api.Caller;
@@ -18,10 +19,14 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @WebSocket
 public class AudioProducerSocket {
+
+    private static final Logger LOGGER = Logger.getLogger(AudioProducerSocket.class.getName());
 
     private final ConcurrentMap<Channel, Map<Caller, Session>> channelSessions = new ConcurrentHashMap<>();
     private final ConcurrentMap<Session, Channel> sessionToChannelId = new ConcurrentHashMap<>();
@@ -71,7 +76,8 @@ public class AudioProducerSocket {
 
 
     @OnWebSocketClose
-    public void onClose(Session session) {
+    public void onClose(Session session, int statusCode, String reason) {
+        LOGGER.log(Level.INFO, "Closing socket. Status: " + statusCode + " Reason: " + reason);
         Channel channel = sessionToChannelId.remove(session);
         if (channel == null) {
             return;
@@ -87,5 +93,11 @@ public class AudioProducerSocket {
             sessionMap.remove(caller);
             return sessionMap;
         });
+    }
+
+    @OnWebSocketError
+    public void onError(Session session, Throwable error) {
+        LOGGER.log(Level.SEVERE, "Socket error", error);
+        session.close(1500, "Socket Error");
     }
 }
