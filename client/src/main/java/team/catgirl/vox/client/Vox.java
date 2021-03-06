@@ -26,11 +26,11 @@ public final class Vox implements Closeable {
     WebSocket audioSenderSocket;
     WebSocket audioReceiverSocket;
 
-    public Vox(OkHttpClient http, String baseUrl, Caller identity, Channel channel, InputDevice inputDevice, OutputDevice outputDevice, Cipher cipher) {
+    public Vox(OkHttpClient http, String baseUrl, byte[] token, Caller identity, Channel channel, InputDevice inputDevice, OutputDevice outputDevice, Cipher cipher) {
         this.http = http;
         this.baseUrl = baseUrl;
         this.senderSocket = new AudioSenderSocket(inputDevice, cipher, identity, channel);
-        this.receiverSocket = new AudioReceiverSocket(outputDevice, cipher, identity, channel);
+        this.receiverSocket = new AudioReceiverSocket(outputDevice, cipher, identity, channel, token);
     }
 
     /**

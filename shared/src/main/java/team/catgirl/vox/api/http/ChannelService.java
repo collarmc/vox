@@ -26,6 +26,14 @@ public interface ChannelService {
      */
     boolean isPermitted(Channel channel, Caller caller, byte[] permit);
 
+    /**
+     * Check if caller has a permit for channel
+     * @param channel to test
+     * @param caller to test
+     * @return permitted or not
+     */
+    boolean isPermitted(Channel channel, Caller caller);
+
     final class PermitAccessRequest {
         public final Channel channel;
         public final Caller caller;

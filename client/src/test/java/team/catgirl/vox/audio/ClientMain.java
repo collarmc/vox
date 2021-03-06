@@ -13,9 +13,13 @@ public class ClientMain {
     public static void main(String[] args) throws InterruptedException {
         OkHttpClient httpClient = new OkHttpClient();
         Devices devices = new Devices();
+
+
+
         Vox vox = new Vox(
                 httpClient,
                 "http://localhost:4000",
+                token,
                 new Caller(UUID.randomUUID()),
                 new Channel(UUID.randomUUID()),
                 devices.getDefaultInputDevice(),

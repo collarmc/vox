@@ -2,11 +2,11 @@ package team.catgirl.vox.server.audio;
 
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import team.catgirl.vox.api.Caller;
 import team.catgirl.vox.api.Channel;
+import team.catgirl.vox.api.http.ChannelService;
 import team.catgirl.vox.io.IO;
 import team.catgirl.vox.protocol.AudioStreamPacket;
 import team.catgirl.vox.protocol.IdentifyPacket;
@@ -26,6 +26,11 @@ public class AudioProducerSocket {
     private final ConcurrentMap<Channel, Map<Caller, Session>> channelSessions = new ConcurrentHashMap<>();
     private final ConcurrentMap<Session, Channel> sessionToChannelId = new ConcurrentHashMap<>();
     private final ConcurrentMap<Session, Caller> sessionToCaller = new ConcurrentHashMap<>();
+    private final ChannelService channels;
+
+    public AudioProducerSocket(ChannelService channels) {
+        this.channels = channels;
+    }
 
     public void sendPackets(Channel channel, List<AudioStreamPacket> packets) {
         Map<Caller, Session> sessions = channelSessions.get(channel);
@@ -34,6 +39,9 @@ public class AudioProducerSocket {
         }
         sessions.entrySet().parallelStream().forEach(entry -> {
             Caller owner = entry.getKey();
+            if (!channels.isPermitted(channel, owner)) {
+                return;
+            }
             Session session = entry.getValue();
             List<AudioStreamPacket> filtered = packets.stream().filter(streamPacket -> !streamPacket.owner.equals(owner)).collect(Collectors.toList());
             OutputAudioPacket voicePacket = new OutputAudioPacket(channel, filtered);

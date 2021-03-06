@@ -26,7 +26,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class AudioReceiverSocket extends WebSocketListener implements Closeable {
+class AudioReceiverSocket extends WebSocketListener implements Closeable {
 
     private static final Logger LOGGER = Logger.getLogger(AudioReceiverSocket.class.getName());
 
@@ -34,16 +34,18 @@ public class AudioReceiverSocket extends WebSocketListener implements Closeable 
     private final Cipher cipher;
     private final Caller identity;
     private final Channel channel;
+    private final byte[] token;
     private final Decoder decoder = new OpusDecoder();
     private final Mixer mixer = new OpusMixer();
     private final LinkedBlockingDeque<OutputAudioPacket> packets = new LinkedBlockingDeque<>(Short.MAX_VALUE);
     private final Thread soundPlayer = new Thread(new SoundPlayer());
 
-    public AudioReceiverSocket(OutputDevice outputDevice, Cipher cipher, Caller identity, Channel channel) {
+    public AudioReceiverSocket(OutputDevice outputDevice, Cipher cipher, Caller identity, Channel channel, byte[] token) {
         this.outputDevice = outputDevice;
         this.cipher = cipher;
         this.identity = identity;
         this.channel = channel;
+        this.token = token;
     }
 
     @Override
@@ -56,7 +58,7 @@ public class AudioReceiverSocket extends WebSocketListener implements Closeable 
     public void onOpen(@NotNull WebSocket webSocket, @NotNull Response response) {
         super.onOpen(webSocket, response);
         soundPlayer.start();
-        IdentifyPacket identifyPacket = new IdentifyPacket(identity, channel);
+        IdentifyPacket identifyPacket = new IdentifyPacket(identity, channel, token);
         try {
             webSocket.send(ByteString.of(identifyPacket.serialize()));
         } catch (IOException e) {

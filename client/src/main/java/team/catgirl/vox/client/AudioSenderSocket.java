@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 
 import static team.catgirl.vox.audio.opus.OpusSettings.OPUS_FRAME_SIZE;
 
-public class AudioSenderSocket extends WebSocketListener implements Closeable {
+class AudioSenderSocket extends WebSocketListener implements Closeable {
 
     private static final Logger LOGGER = Logger.getLogger(AudioSenderSocket.class.getName());
     private final InputDevice inputDevice;

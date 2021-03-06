@@ -2,6 +2,7 @@ package team.catgirl.vox.server.channels;
 
 import team.catgirl.vox.api.Caller;
 import team.catgirl.vox.api.Channel;
+import team.catgirl.vox.api.http.ChannelService;
 import team.catgirl.vox.audio.opus.OpusMixer;
 import team.catgirl.vox.protocol.AudioPacket;
 import team.catgirl.vox.audio.Mixer;
@@ -25,9 +26,11 @@ public class Multiplexer {
     private final ConcurrentMap<Channel, Future<?>> channelProcessors = new ConcurrentHashMap<>();
     private final ExecutorService consumerExecutor = Executors.newCachedThreadPool();
 
+    private final ChannelService channelService;
     private final BiConsumer<Channel, List<AudioStreamPacket>> packetConsumer;
 
-    public Multiplexer(BiConsumer<Channel, List<AudioStreamPacket>> packetConsumer) {
+    public Multiplexer(ChannelService channels, BiConsumer<Channel, List<AudioStreamPacket>> packetConsumer) {
+        channelService = channels;
         this.packetConsumer = packetConsumer;
     }
 
@@ -36,6 +39,9 @@ public class Multiplexer {
      * @param packet to process
      */
     public void receive(SourceAudioPacket packet) {
+        if (!channelService.isPermitted(packet.channel, packet.owner)) {
+            return;
+        }
         AtomicReference<ChannelState> newChannel = new AtomicReference<>();
         channels.compute(packet.channel, (channelId, channelState) -> {
             if (channelState == null) {

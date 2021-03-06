@@ -36,6 +36,12 @@ public class ChannelServiceImpl implements ChannelService {
         return encodedToken != null && Arrays.equals(BaseEncoding.base64().decode(encodedToken), permit);
     }
 
+    @Override
+    public boolean isPermitted(Channel channel, Caller caller) {
+        String encodedToken = redis.get(permitKey(channel, caller));
+        return encodedToken != null;
+    }
+
     private static String permitKey(Channel channel, Caller caller) {
         return "vox:channel:permit" + channel.id + ":" + caller.id;
     }
