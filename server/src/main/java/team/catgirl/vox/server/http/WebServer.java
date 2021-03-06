@@ -8,6 +8,8 @@ import team.catgirl.vox.server.audio.AudioSubscriberSocket;
 import team.catgirl.vox.server.channels.Multiplexer;
 import team.catgirl.vox.server.services.ChannelServiceImpl;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,9 +19,17 @@ public class WebServer {
 
     private static final Logger LOGGER = Logger.getLogger(WebServer.class.getName());
 
-    public void start() {
+    public void start() throws Exception {
         port(httpPort());
-        Jedis jedis = new Jedis();
+
+        Jedis jedis;
+        String redisUrl = System.getenv("REDIS_TLS_URL");
+        if (redisUrl == null) {
+            jedis = new Jedis();
+        } else {
+            jedis = new Jedis(new URI(redisUrl));
+        }
+
         ChannelService channels = new ChannelServiceImpl(jedis);
 
         AudioProducerSocket producerSocket = new AudioProducerSocket();
