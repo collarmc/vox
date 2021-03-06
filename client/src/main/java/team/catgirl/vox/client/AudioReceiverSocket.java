@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import team.catgirl.vox.api.Caller;
 import team.catgirl.vox.api.Channel;
+import team.catgirl.vox.audio.opus.OpusDecoder;
 import team.catgirl.vox.security.Cipher;
 import team.catgirl.vox.audio.Mixer;
 import team.catgirl.vox.protocol.AudioPacket;
@@ -32,7 +33,7 @@ public class AudioReceiverSocket extends WebSocketListener implements Closeable 
     private final Cipher cipher;
     private final Caller identity;
     private final Channel channel;
-    private final Decoder decoder = new Decoder();
+    private final Decoder decoder = new OpusDecoder();
     private final Mixer mixer = new Mixer();
     private final LinkedBlockingDeque<OutputAudioPacket> packets = new LinkedBlockingDeque<>(Short.MAX_VALUE);
     private final Thread soundPlayer = new Thread(new SoundPlayer());

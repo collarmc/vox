@@ -4,6 +4,8 @@ import org.junit.Test;
 import team.catgirl.vox.audio.devices.Devices;
 import team.catgirl.vox.audio.devices.InputDevice;
 import team.catgirl.vox.audio.devices.OutputDevice;
+import team.catgirl.vox.audio.opus.CopusEncoder;
+import team.catgirl.vox.audio.opus.OpusDecoder;
 import team.catgirl.vox.audio.opus.OpusSettings;
 import team.catgirl.vox.protocol.AudioPacket;
 
@@ -32,8 +34,8 @@ public class RoundTripTest {
             AudioFormat format = new AudioFormat(44100, 16, 1, true, false);
             int sampleSize = (int) ((format.getSampleRate() / format.getSampleSizeInBits()) * format.getChannels());
             byte[] bytes = new byte[sampleSize];
-            try (Encoder encoder = new Encoder()) {
-                try (Decoder decoder = new Decoder()) {
+            try (Encoder encoder = new CopusEncoder()) {
+                try (Decoder decoder = new OpusDecoder()) {
                     try (SourceDataLine sourceLine = AudioSystem.getSourceDataLine(format)) {
                         sourceLine.open();
                         sourceLine.start();

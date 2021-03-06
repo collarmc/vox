@@ -11,7 +11,7 @@ public class AudioException extends RuntimeException {
         super(message, cause);
     }
 
-    static void assertOpusError(int code) {
+    public static void assertOpusError(int code) {
         if (code >= 0) return;
         switch (code) {
             case Opus.OPUS_BAD_ARG:
