@@ -1,0 +1,1 @@
+web: java $JAVA_OPTS -jar server/target/server.jar
