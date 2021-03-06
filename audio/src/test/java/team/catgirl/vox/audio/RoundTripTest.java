@@ -4,6 +4,7 @@ import org.junit.Test;
 import team.catgirl.vox.audio.devices.Devices;
 import team.catgirl.vox.audio.devices.InputDevice;
 import team.catgirl.vox.audio.devices.OutputDevice;
+import team.catgirl.vox.audio.opus.OpusSettings;
 import team.catgirl.vox.protocol.AudioPacket;
 
 import javax.sound.sampled.AudioFormat;
@@ -13,10 +14,6 @@ import javax.sound.sampled.TargetDataLine;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.concurrent.LinkedBlockingDeque;
-
-import static team.catgirl.vox.audio.OpusSettings.OPUS_FRAME_SIZE;
-import static team.catgirl.vox.audio.OpusSettings.OPUS_SAMPLE_RATE;
 
 
 public class RoundTripTest {
@@ -41,8 +38,8 @@ public class RoundTripTest {
                         sourceLine.open();
                         sourceLine.start();
                         while (audioStream.read(bytes) >= 0) {
-                            AudioPacket audioPacket = encoder.encodePacket(bytes);
-                            byte[] output = decoder.decode(audioPacket);
+                            AudioPacket audioPacket = encoder.encodePacket(bytes, bytes1 -> bytes1);
+                            byte[] output = decoder.decode(audioPacket, decoded -> decoded);
                             sourceLine.write(output, 0, output.length);
                         }
                         sourceLine.stop();

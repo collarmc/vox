@@ -1,12 +1,14 @@
 package team.catgirl.vox.client;
 
-import com.google.common.collect.EvictingQueue;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okio.ByteString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import team.catgirl.vox.api.Caller;
+import team.catgirl.vox.api.Channel;
+import team.catgirl.vox.security.Cipher;
 import team.catgirl.vox.audio.Mixer;
 import team.catgirl.vox.protocol.AudioPacket;
 import team.catgirl.vox.audio.Decoder;
@@ -18,7 +20,6 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,15 +29,17 @@ public class AudioReceiverSocket extends WebSocketListener implements Closeable 
     private static final Logger LOGGER = Logger.getLogger(AudioReceiverSocket.class.getName());
 
     private final OutputDevice outputDevice;
-    private final UUID identity;
-    private final UUID channel;
+    private final Cipher cipher;
+    private final Caller identity;
+    private final Channel channel;
     private final Decoder decoder = new Decoder();
     private final Mixer mixer = new Mixer();
     private final LinkedBlockingDeque<OutputAudioPacket> packets = new LinkedBlockingDeque<>(Short.MAX_VALUE);
     private final Thread soundPlayer = new Thread(new SoundPlayer());
 
-    public AudioReceiverSocket(OutputDevice outputDevice, UUID identity, UUID channel) {
+    public AudioReceiverSocket(OutputDevice outputDevice, Cipher cipher, Caller identity, Channel channel) {
         this.outputDevice = outputDevice;
+        this.cipher = cipher;
         this.identity = identity;
         this.channel = channel;
     }
@@ -94,11 +97,11 @@ public class AudioReceiverSocket extends WebSocketListener implements Closeable 
                     if (packet == null) {
                         continue;
                     }
-                    AudioPacket audioPacket = mixer.mix(packet);
+                    AudioPacket audioPacket = mixer.mix(packet, streamPacket -> cipher.decrypt(streamPacket.owner, packet.channel, streamPacket.audio.bytes));
                     if (audioPacket.isEmpty()) {
                         continue;
                     }
-                    byte[] pcm = decoder.decode(audioPacket);
+                    byte[] pcm = decoder.decode(audioPacket, bytes -> bytes);
                     line.write(pcm, 0, pcm.length);
                 }
             }

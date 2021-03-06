@@ -1,4 +1,4 @@
-package team.catgirl.vox.audio;
+package team.catgirl.vox.audio.opus;
 
 import club.minnced.opus.util.OpusLibrary;
 

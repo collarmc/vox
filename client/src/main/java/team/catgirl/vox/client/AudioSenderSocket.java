@@ -5,6 +5,9 @@ import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okio.ByteString;
 import org.jetbrains.annotations.NotNull;
+import team.catgirl.vox.api.Caller;
+import team.catgirl.vox.api.Channel;
+import team.catgirl.vox.security.Cipher;
 import team.catgirl.vox.protocol.AudioPacket;
 import team.catgirl.vox.audio.Encoder;
 import team.catgirl.vox.audio.devices.InputDevice;
@@ -13,25 +16,26 @@ import team.catgirl.vox.protocol.SourceAudioPacket;
 import javax.sound.sampled.TargetDataLine;
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static team.catgirl.vox.audio.OpusSettings.OPUS_FRAME_SIZE;
+import static team.catgirl.vox.audio.opus.OpusSettings.OPUS_FRAME_SIZE;
 
 public class AudioSenderSocket extends WebSocketListener implements Closeable {
 
     private static final Logger LOGGER = Logger.getLogger(AudioSenderSocket.class.getName());
     private final InputDevice inputDevice;
-    private final UUID identity;
-    private final UUID channel;
+    private final Cipher cipher;
+    private final Caller caller;
+    private final Channel channel;
     private final Encoder encoder = new Encoder();
     private Thread worker;
 
-    public AudioSenderSocket(InputDevice inputDevice, UUID identity, UUID channel) {
+    public AudioSenderSocket(InputDevice inputDevice, Cipher cipher, Caller caller, Channel channel) {
         this.inputDevice = inputDevice;
-        this.identity = identity;
+        this.cipher = cipher;
+        this.caller = caller;
         this.channel = channel;
     }
 
@@ -79,9 +83,9 @@ public class AudioSenderSocket extends WebSocketListener implements Closeable {
                     if (read < 0) {
                         audioPacket = AudioPacket.SILENCE;
                     } else {
-                        audioPacket = encoder.encodePacket(buff);
+                        audioPacket = encoder.encodePacket(buff, bytes -> cipher.crypt(caller, channel, bytes));
                     }
-                    SourceAudioPacket packet = new SourceAudioPacket(identity, channel, audioPacket);
+                    SourceAudioPacket packet = new SourceAudioPacket(caller, channel, audioPacket);
                     try {
                         webSocket.send(ByteString.of(packet.serialize()));
                     } catch (Throwable e) {

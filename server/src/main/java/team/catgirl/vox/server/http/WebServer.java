@@ -11,7 +11,7 @@ public class WebServer {
         port(httpPort());
 
         AudioProducerSocket producerSocket = new AudioProducerSocket();
-        Multiplexer multiplexer = new Multiplexer(producerSocket::consume);
+        Multiplexer multiplexer = new Multiplexer(producerSocket::sendPackets);
         AudioSubscriberSocket subscriberSocket = new AudioSubscriberSocket(multiplexer);
 
         webSocket("/api/1/audio/send", subscriberSocket);

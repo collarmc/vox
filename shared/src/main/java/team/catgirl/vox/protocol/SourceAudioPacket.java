@@ -1,5 +1,7 @@
 package team.catgirl.vox.protocol;
 
+import team.catgirl.vox.api.Caller;
+import team.catgirl.vox.api.Channel;
 import team.catgirl.vox.io.IO;
 
 import java.io.*;
@@ -13,17 +15,17 @@ public final class SourceAudioPacket {
     /**
      * Owner of the packet
      */
-    public final UUID owner;
+    public final Caller owner;
     /**
      * Channel the packet is destined to be broadcast to
      */
-    public final UUID channel;
+    public final Channel channel;
     /**
      * Audio to be sent
      */
     public final AudioPacket audio;
 
-    public SourceAudioPacket(UUID owner, UUID channel, AudioPacket audio) {
+    public SourceAudioPacket(Caller owner, Channel channel, AudioPacket audio) {
         this.owner = owner;
         this.channel = channel;
         this.audio = audio;
@@ -36,8 +38,8 @@ public final class SourceAudioPacket {
                 if (version != VERSION) {
                     throw new IllegalStateException("unknown version " + version);
                 }
-                owner = IO.readUUID(dataStream);
-                channel = IO.readUUID(dataStream);
+                owner = new Caller(IO.readUUID(dataStream));
+                channel = new Channel(IO.readUUID(dataStream));
                 audio = AudioPacket.deserialize(IO.readBytes(dataStream));
             }
         }
@@ -47,8 +49,8 @@ public final class SourceAudioPacket {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             try (DataOutputStream dataStream = new DataOutputStream(outputStream)) {
                 dataStream.writeInt(VERSION);
-                IO.writeUUID(dataStream, owner);
-                IO.writeUUID(dataStream, channel);
+                IO.writeUUID(dataStream, owner.id);
+                IO.writeUUID(dataStream, channel.id);
                 IO.writeBytes(dataStream, audio.serialize());
             }
             return outputStream.toByteArray();

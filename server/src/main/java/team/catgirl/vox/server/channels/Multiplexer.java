@@ -1,6 +1,7 @@
 package team.catgirl.vox.server.channels;
 
-import com.google.common.collect.EvictingQueue;
+import team.catgirl.vox.api.Caller;
+import team.catgirl.vox.api.Channel;
 import team.catgirl.vox.protocol.AudioPacket;
 import team.catgirl.vox.audio.Mixer;
 import team.catgirl.vox.protocol.SourceAudioPacket;
@@ -12,7 +13,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -20,13 +20,13 @@ public class Multiplexer {
 
     private static final Logger LOGGER = Logger.getLogger(Multiplexer.class.getName());
 
-    private final ConcurrentMap<UUID, ChannelState> channels = new ConcurrentHashMap<>();
-    private final ConcurrentMap<UUID, Future<?>> channelProcessors = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Channel, ChannelState> channels = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Channel, Future<?>> channelProcessors = new ConcurrentHashMap<>();
     private final ExecutorService consumerExecutor = Executors.newCachedThreadPool();
 
-    private final BiConsumer<UUID, List<AudioStreamPacket>> packetConsumer;
+    private final BiConsumer<Channel, List<AudioStreamPacket>> packetConsumer;
 
-    public Multiplexer(BiConsumer<UUID, List<AudioStreamPacket>> packetConsumer) {
+    public Multiplexer(BiConsumer<Channel, List<AudioStreamPacket>> packetConsumer) {
         this.packetConsumer = packetConsumer;
     }
 
@@ -47,17 +47,17 @@ public class Multiplexer {
         ChannelState channelState = newChannel.get();
         if (channelState != null) {
             Future<?> future = consumerExecutor.submit(new ChannelProcessor(channelState, packetConsumer));
-            channelProcessors.put(channelState.id, future);
+            channelProcessors.put(channelState.channel, future);
         };
     }
 
     private static class ChannelProcessor implements Runnable, Closeable {
-        private final ChannelState channel;
-        private final BiConsumer<UUID, List<AudioStreamPacket>> packetConsumer;
+        private final ChannelState state;
+        private final BiConsumer<Channel, List<AudioStreamPacket>> packetConsumer;
         private final Mixer mixer = new Mixer();
 
-        public ChannelProcessor(ChannelState channel, BiConsumer<UUID, List<AudioStreamPacket>> packetConsumer) {
-            this.channel = channel;
+        public ChannelProcessor(ChannelState state, BiConsumer<Channel, List<AudioStreamPacket>> packetConsumer) {
+            this.state = state;
             this.packetConsumer = packetConsumer;
         }
 
@@ -65,17 +65,17 @@ public class Multiplexer {
         public void run() {
             try {
                 while (true) {
-                    List<AudioStreamPacket> packetList = channel.packetQueues.entrySet().stream()
+                    List<AudioStreamPacket> packetList = state.packetQueues.entrySet().stream()
                             .map(entry -> {
                                 AudioPacket packet = entry.getValue().poll();
                                 return new AudioStreamPacket(entry.getKey(), packet == null ? AudioPacket.SILENCE : packet);
                             })
                             .collect(Collectors.toList());
-                    packetConsumer.accept(channel.id, packetList);
+                    packetConsumer.accept(state.channel, packetList);
                     try {
                         Thread.sleep(10);
                     } catch (InterruptedException e) {
-                        packetConsumer.accept(channel.id, null);
+                        packetConsumer.accept(state.channel, null);
                         throw new RuntimeException(e);
                     }
                 }
@@ -91,11 +91,11 @@ public class Multiplexer {
     }
 
     private static class ChannelState {
-        public final UUID id;
-        public final ConcurrentMap<UUID, LinkedBlockingDeque<AudioPacket>> packetQueues;
+        public final Channel channel;
+        public final ConcurrentMap<Caller, LinkedBlockingDeque<AudioPacket>> packetQueues;
 
-        public ChannelState(UUID id) {
-            this.id = id;
+        public ChannelState(Channel channel) {
+            this.channel = channel;
             this.packetQueues = new ConcurrentHashMap<>();
         }
     }

@@ -1,5 +1,6 @@
 package team.catgirl.vox.protocol;
 
+import team.catgirl.vox.api.Caller;
 import team.catgirl.vox.io.IO;
 
 import java.io.*;
@@ -11,10 +12,10 @@ import java.util.UUID;
 public final class AudioStreamPacket {
     private static final int VERSION = 1;
 
-    public final UUID owner;
+    public final Caller owner;
     public final AudioPacket audio;
 
-    public AudioStreamPacket(UUID owner, AudioPacket audio) {
+    public AudioStreamPacket(Caller owner, AudioPacket audio) {
         this.owner = owner;
         this.audio = audio;
     }
@@ -26,7 +27,7 @@ public final class AudioStreamPacket {
                 if (version != VERSION) {
                     throw new IllegalStateException("unknown version " + version);
                 }
-                owner = IO.readUUID(dataStream);
+                owner = new Caller(IO.readUUID(dataStream));
                 audio = AudioPacket.deserialize(IO.readBytes(dataStream));
             }
         }
@@ -36,7 +37,7 @@ public final class AudioStreamPacket {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             try (DataOutputStream dataStream = new DataOutputStream(outputStream)) {
                 dataStream.writeInt(VERSION);
-                IO.writeUUID(dataStream, owner);
+                IO.writeUUID(dataStream, owner.id);
                 IO.writeBytes(dataStream, audio.serialize());
             }
             return outputStream.toByteArray();

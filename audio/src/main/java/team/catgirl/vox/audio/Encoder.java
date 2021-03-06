@@ -1,17 +1,21 @@
 package team.catgirl.vox.audio;
 
 import com.sun.jna.ptr.PointerByReference;
+import team.catgirl.vox.audio.opus.OpusSettings;
 import team.catgirl.vox.protocol.AudioPacket;
 import tomp2p.opuswrapper.Opus;
 
 import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.function.Function;
 
 import static tomp2p.opuswrapper.Opus.*;
 
+/**
+ * Audio encoder
+ */
 public final class Encoder implements Closeable {
-
 
     private final PointerByReference encoder;
 
@@ -24,9 +28,10 @@ public final class Encoder implements Closeable {
     /**
      * Produces an opus audio packet
      * @param rawAudio audio
+     * @param transformer for byte payload
      * @return byte buffer containing opus audio packet
      */
-    public AudioPacket encodePacket(byte[] rawAudio) {
+    public AudioPacket encodePacket(byte[] rawAudio, Function<byte[], byte[]> transformer) {
         ByteBuffer nonEncodedBuffer = ByteBuffer.allocateDirect(rawAudio.length);
         nonEncodedBuffer.put(rawAudio);
         nonEncodedBuffer.flip();
@@ -35,7 +40,7 @@ public final class Encoder implements Closeable {
         AudioException.assertOpusError(result);
         byte[] encodedByte = new byte[result];
         encoded.get(encodedByte);
-        return AudioPacket.fromEncodedBytes(encodedByte);
+        return AudioPacket.fromEncodedBytes(transformer.apply(encodedByte));
     }
 
     @Override

@@ -1,6 +1,6 @@
 package team.catgirl.vox.server;
 
-import team.catgirl.vox.audio.OpusSettings;
+import team.catgirl.vox.audio.opus.OpusSettings;
 import team.catgirl.vox.server.http.WebServer;
 
 public class Main {

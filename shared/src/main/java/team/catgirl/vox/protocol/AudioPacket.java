@@ -13,10 +13,10 @@ public final class AudioPacket {
 
     private static final int VERSION = 1;
 
-    public final byte[] audio;
+    public final byte[] bytes;
 
-    private AudioPacket(byte[] audio) {
-        this.audio = audio;
+    private AudioPacket(byte[] bytes) {
+        this.bytes = bytes;
     }
 
     public static AudioPacket fromEncodedBytes(byte[] audio) {
@@ -41,7 +41,7 @@ public final class AudioPacket {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             try (DataOutputStream dataStream = new DataOutputStream(outputStream)) {
                 dataStream.writeInt(VERSION);
-                IO.writeBytes(dataStream, audio);
+                IO.writeBytes(dataStream, bytes);
             }
             return outputStream.toByteArray();
         } catch (IOException e) {
@@ -50,6 +50,6 @@ public final class AudioPacket {
     }
 
     public boolean isEmpty() {
-        return audio.length == 0;
+        return bytes.length == 0;
     }
 }

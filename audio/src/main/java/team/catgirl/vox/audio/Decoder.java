@@ -1,25 +1,20 @@
 package team.catgirl.vox.audio;
 
-import club.minnced.opus.util.OpusLibrary;
 import com.sun.jna.ptr.PointerByReference;
+import team.catgirl.vox.audio.opus.OpusSettings;
 import team.catgirl.vox.protocol.AudioPacket;
 import tomp2p.opuswrapper.Opus;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
+import java.util.function.Function;
 
+/**
+ * Audio decoder
+ */
 public final class Decoder implements Closeable {
-
-    static {
-        try {
-            OpusLibrary.loadFromJar();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     private final PointerByReference decoderPtr;
 
@@ -32,19 +27,17 @@ public final class Decoder implements Closeable {
     /**
      * Decodes Audio Packet into raw PCM data
      * @param packet to decode
+     * @param transformer for byte payload
      * @return bytes of PCM data
      */
-    public byte[] decode(AudioPacket packet) {
+    public byte[] decode(AudioPacket packet, Function<byte[], byte[]> transformer) {
         ByteBuffer backingBuffer = ByteBuffer.allocateDirect(4096);
         ShortBuffer decoded = backingBuffer.asShortBuffer();
-        int result = Opus.INSTANCE.opus_decode(decoderPtr, packet.audio, packet.audio.length, decoded, OpusSettings.OPUS_FRAME_SIZE, 0);
-//        IntBuffer lastDuration = IntBuffer.allocate(1);
-//        Opus.INSTANCE.opus_decoder_ctl(decoderPtr, Opus.OPUS_GET_LAST_PACKET_DURATION_REQUEST, lastDuration);
-//        System.out.println("Last duration " + lastDuration.get());
+        int result = Opus.INSTANCE.opus_decode(decoderPtr, packet.bytes, packet.bytes.length, decoded, OpusSettings.OPUS_FRAME_SIZE, 0);
         AudioException.assertOpusError(result);
         byte[] bytes = new byte[backingBuffer.limit()];
         backingBuffer.get(bytes);
-        return bytes;
+        return transformer.apply(bytes);
     }
 
     @Override

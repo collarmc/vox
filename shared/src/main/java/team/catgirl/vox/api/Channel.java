@@ -1,27 +1,25 @@
 package team.catgirl.vox.api;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 public final class Channel {
     public final UUID id;
-    public final Map<UUID, Caller> participants;
 
-    public Channel(UUID id, Map<UUID, Caller> participants) {
+    public Channel(UUID id) {
         this.id = id;
-        this.participants = participants;
     }
 
-    public Channel addParticipant(Caller caller) {
-        HashMap<UUID, Caller> newParticipants = new HashMap<>(participants);
-        newParticipants.put(caller.id, caller);
-        return new Channel(id, newParticipants);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Channel channel = (Channel) o;
+        return id.equals(channel.id);
     }
 
-    public Channel removeParticipant(Caller caller) {
-        HashMap<UUID, Caller> newParticipants = new HashMap<>(participants);
-        Caller removed = newParticipants.remove(caller.id);
-        return removed == null ? this : new Channel(id, newParticipants);
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

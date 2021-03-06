@@ -10,7 +10,11 @@ import tomp2p.opuswrapper.Opus;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.function.Function;
 
+/**
+ * Responsible for mixing {@link AudioStreamPacket}'s into a single {@link AudioPacket}
+ */
 public class Mixer implements Closeable {
 
     public static final int BUFFER_SIZE = 1276;
@@ -23,7 +27,13 @@ public class Mixer implements Closeable {
         this.opusRepacketizerPrt = Opus.INSTANCE.opus_repacketizer_create();
     }
 
-    public AudioPacket mix(OutputAudioPacket packets) {
+    /**
+     * Mixes multiple AudioStreamPacket's into a single AudioPacket
+     * @param packets to mix
+     * @param transformer to apply to each audio stream packet
+     * @return packet ready for playback
+     */
+    public AudioPacket mix(OutputAudioPacket packets, Function<AudioStreamPacket, byte[]> transformer) {
         // If there are no packets then return silence
         if (packets.streamPackets.isEmpty()) {
             return AudioPacket.SILENCE;
@@ -34,13 +44,12 @@ public class Mixer implements Closeable {
         }
         // Repacketize multiple streams
         for (AudioStreamPacket packet : packets.streamPackets) {
-            int result = Opus.INSTANCE.opus_repacketizer_cat(opusRepacketizerPrt, packet.audio.audio, packet.audio.audio.length);
+            byte[] bytes = transformer.apply(packet);
+            int result = Opus.INSTANCE.opus_repacketizer_cat(opusRepacketizerPrt, bytes, bytes.length);
             AudioException.assertOpusError(result);
         }
-        int size = Opus.INSTANCE.opus_repacketizer_out(this.opusRepacketizerPrt, buffer, buffer.capacity());
-        if (size < 0) {
-            throw new AudioException("could not mix audio");
-        }
+        int read = Opus.INSTANCE.opus_repacketizer_out(this.opusRepacketizerPrt, buffer, buffer.capacity());
+        AudioException.assertOpusError(read);
         buffer.flip();
         byte[] out = new byte[buffer.limit()];
         buffer.get(out);
@@ -50,13 +59,5 @@ public class Mixer implements Closeable {
     @Override
     public void close() {
         Opus.INSTANCE.opus_repacketizer_destroy(opusRepacketizerPrt);
-    }
-
-    static {
-        try {
-            OpusLibrary.loadFromJar();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

@@ -1,5 +1,7 @@
 package team.catgirl.vox.protocol;
 
+import team.catgirl.vox.api.Caller;
+import team.catgirl.vox.api.Channel;
 import team.catgirl.vox.io.IO;
 
 import java.io.*;
@@ -10,10 +12,10 @@ import java.util.UUID;
  */
 public final class IdentifyPacket {
     private static final int VERSION = 1;
-    public final UUID owner;
-    public final UUID channel;
+    public final Caller owner;
+    public final Channel channel;
 
-    public IdentifyPacket(UUID owner, UUID channel) {
+    public IdentifyPacket(Caller owner, Channel channel) {
         this.owner = owner;
         this.channel = channel;
     }
@@ -25,8 +27,8 @@ public final class IdentifyPacket {
                 if (version != VERSION) {
                     throw new IllegalStateException("unknown version " + version);
                 }
-                owner = IO.readUUID(dataStream);
-                channel = IO.readUUID(dataStream);
+                owner = new Caller(IO.readUUID(dataStream));
+                channel = new Channel(IO.readUUID(dataStream));
             }
         }
     }
@@ -35,8 +37,8 @@ public final class IdentifyPacket {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             try (DataOutputStream dataStream = new DataOutputStream(outputStream)) {
                 dataStream.writeInt(VERSION);
-                IO.writeUUID(dataStream, owner);
-                IO.writeUUID(dataStream, channel);
+                IO.writeUUID(dataStream, owner.id);
+                IO.writeUUID(dataStream, channel.id);
             }
             return outputStream.toByteArray();
         }
