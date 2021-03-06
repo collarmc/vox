@@ -4,7 +4,6 @@ import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
-import team.catgirl.vox.protocol.AudioPacket;
 import team.catgirl.vox.io.IO;
 import team.catgirl.vox.protocol.AudioStreamPacket;
 import team.catgirl.vox.protocol.IdentifyPacket;
@@ -16,26 +15,32 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 @WebSocket
 public class AudioProducerSocket {
 
-    private final ConcurrentMap<UUID, Set<Session>> channelSessions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, Map<UUID, Session>> channelSessions = new ConcurrentHashMap<>();
 
     public void consume(UUID channel, List<AudioStreamPacket> packets) {
-        OutputAudioPacket voicePacket = new OutputAudioPacket(channel, packets);
-        byte[] bytes;
-        try {
-            bytes = voicePacket.serialize();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-        ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
-        Set<Session> sessions = channelSessions.get(channel);
+        Map<UUID, Session> sessions = channelSessions.get(channel);
         if (sessions == null) {
             return;
         }
-        sessions.stream().filter(Session::isOpen).forEach(session -> session.getRemote().sendBytesByFuture(byteBuffer));
+        sessions.entrySet().parallelStream().forEach(entry -> {
+            UUID owner = entry.getKey();
+            Session session = entry.getValue();
+            List<AudioStreamPacket> filtered = packets.stream().filter(streamPacket -> !streamPacket.owner.equals(owner)).collect(Collectors.toList());
+            OutputAudioPacket voicePacket = new OutputAudioPacket(channel, filtered);
+            byte[] bytes;
+            try {
+                bytes = voicePacket.serialize();
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+            ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+            session.getRemote().sendBytesByFuture(byteBuffer);
+        });
     }
 
     @OnWebSocketConnect
@@ -48,8 +53,8 @@ public class AudioProducerSocket {
         byte[] bytes = IO.toByteArray(stream);
         IdentifyPacket packet = new IdentifyPacket(bytes);
         channelSessions.compute(packet.channel, (channelId, sessions) -> {
-            sessions = sessions == null ? new HashSet<>() : sessions;
-            sessions.add(session);
+            sessions = sessions == null ? new ConcurrentHashMap<>() : sessions;
+            sessions.put(packet.owner, session);
             return sessions;
         });
     }

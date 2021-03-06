@@ -10,11 +10,11 @@ import java.util.UUID;
  */
 public final class IdentifyPacket {
     private static final int VERSION = 1;
-    public final UUID identity;
+    public final UUID owner;
     public final UUID channel;
 
-    public IdentifyPacket(UUID identity, UUID channel) {
-        this.identity = identity;
+    public IdentifyPacket(UUID owner, UUID channel) {
+        this.owner = owner;
         this.channel = channel;
     }
 
@@ -25,7 +25,7 @@ public final class IdentifyPacket {
                 if (version != VERSION) {
                     throw new IllegalStateException("unknown version " + version);
                 }
-                identity = IO.readUUID(dataStream);
+                owner = IO.readUUID(dataStream);
                 channel = IO.readUUID(dataStream);
             }
         }
@@ -35,7 +35,7 @@ public final class IdentifyPacket {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             try (DataOutputStream dataStream = new DataOutputStream(outputStream)) {
                 dataStream.writeInt(VERSION);
-                IO.writeUUID(dataStream, identity);
+                IO.writeUUID(dataStream, owner);
                 IO.writeUUID(dataStream, channel);
             }
             return outputStream.toByteArray();
