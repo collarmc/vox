@@ -49,8 +49,7 @@ public final class OutputAudioPacket {
                     IO.writeBytes(dataStream, streamPacket.serialize());
                 }
             }
-            byte[] bytes = outputStream.toByteArray();
-            return bytes;
+            return outputStream.toByteArray();
         }
     }
 }
