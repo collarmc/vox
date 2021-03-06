@@ -10,16 +10,21 @@ import team.catgirl.vox.api.http.ChannelService;
 
 import java.io.IOException;
 
+/**
+ * Client API for accessing the channel service
+ */
 public final class ChannelServiceClient implements ChannelService {
 
     private static final ObjectMapper MAPPER = new JsonMapper();
 
     private final OkHttpClient http;
     private final String baseUrl;
+    private final String password;
 
-    public ChannelServiceClient(OkHttpClient http, String baseUrl) {
+    public ChannelServiceClient(OkHttpClient http, String baseUrl, String password) {
         this.http = http;
         this.baseUrl = baseUrl;
+        this.password = password;
     }
 
     @Override
@@ -51,12 +56,13 @@ public final class ChannelServiceClient implements ChannelService {
         }
         Request request = new Request.Builder()
                 .url(baseUrl + url)
+                .addHeader("Authorization", "Bearer" + password)
                 .post(RequestBody.create(bytes, MediaType.get("application/json")))
                 .build();
 
         try (Response response = http.newCall(request).execute()) {
             if (response.code() != 200) {
-                throw new RuntimeException("bad response");
+                throw new RuntimeException("bad response " + response.code());
             }
             return MAPPER.readValue(response.body().bytes(), tClass);
         } catch (IOException e) {

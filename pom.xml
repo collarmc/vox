@@ -13,6 +13,7 @@
         <module>client</module>
         <module>shared</module>
         <module>audio</module>
+        <module>dialer</module>
     </modules>
 
     <dependencyManagement>
@@ -25,6 +26,21 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>audio</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>dialer</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

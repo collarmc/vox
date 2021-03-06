@@ -1,5 +1,6 @@
 package team.catgirl.vox.audio;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import team.catgirl.vox.audio.devices.Devices;
 import team.catgirl.vox.audio.devices.InputDevice;
@@ -21,6 +22,7 @@ import java.net.URL;
 public class RoundTripTest {
 
     @Test
+    @Ignore
     public void roundTrip() throws Exception {
         OpusSettings.initializeCodec();
 
@@ -52,6 +54,7 @@ public class RoundTripTest {
     }
 
     @Test
+    @Ignore
     public void echoTest() throws Exception {
         Devices devices = new Devices();
         InputDevice inputDevice = devices.getDefaultInputDevice();
