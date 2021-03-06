@@ -1,12 +1,15 @@
 package team.catgirl.vox.api;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Objects;
 import java.util.UUID;
 
 public final class Channel {
+    @JsonProperty("id")
     public final UUID id;
 
-    public Channel(UUID id) {
+    public Channel(@JsonProperty("id") UUID id) {
         this.id = id;
     }
 

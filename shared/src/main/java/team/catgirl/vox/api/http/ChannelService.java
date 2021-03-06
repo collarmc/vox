@@ -63,7 +63,8 @@ public interface ChannelService {
         @JsonProperty("caller")
         public final Caller caller;
 
-        public DenyAccessRequest(@JsonProperty("channel") Channel channel, @JsonProperty("caller") Caller caller) {
+        public DenyAccessRequest(@JsonProperty("channel") Channel channel,
+                                 @JsonProperty("caller") Caller caller) {
             this.channel = channel;
             this.caller = caller;
         }
