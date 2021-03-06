@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 import team.catgirl.vox.api.http.ChannelService;
 import team.catgirl.vox.api.http.ChannelService.DenyAccessRequest;
 import team.catgirl.vox.api.http.ChannelService.PermitAccessRequest;
@@ -31,15 +33,11 @@ public class WebServer {
         if (token == null) {
             throw new IllegalStateException("API_TOKEN not set");
         }
+
+        JedisPool jedisPool = createRedis();
+
         ObjectMapper mapper = Utils.jsonMapper();
-        ChannelService channels = new ChannelServiceImpl(() -> {
-            try {
-                // TODO: convert this to use jedis pool
-                return createRedis();
-            } catch (URISyntaxException e) {
-                throw new IllegalStateException(e);
-            }
-        });
+        ChannelService channels = new ChannelServiceImpl(jedisPool::getResource);
         AudioProducerSocket producerSocket = new AudioProducerSocket(channels);
         Multiplexer multiplexer = new Multiplexer(channels, producerSocket::sendPackets);
         AudioSubscriberSocket subscriberSocket = new AudioSubscriberSocket(multiplexer);
@@ -91,13 +89,17 @@ public class WebServer {
         get("/", (request, response) -> "Vox");
     }
 
-    private Jedis createRedis() throws URISyntaxException {
-        Jedis jedis;
+    private JedisPool createRedis() throws URISyntaxException {
+        JedisPool jedis;
+        JedisPoolConfig poolConfig = new JedisPoolConfig();
+        poolConfig.setMaxTotal(40);
+        poolConfig.setMaxIdle(40);
+        poolConfig.setBlockWhenExhausted(true);
         String redisUrl = System.getenv("REDIS_URL");
         if (redisUrl == null) {
-            jedis = new Jedis();
+            jedis = new JedisPool(poolConfig);
         } else {
-            jedis = new Jedis(new URI(redisUrl));
+            jedis = new JedisPool(poolConfig, new URI(redisUrl));
         }
         return jedis;
     }
