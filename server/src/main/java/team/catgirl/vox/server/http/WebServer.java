@@ -98,6 +98,8 @@ public class WebServer {
     }
 
     private JedisPool createRedis() throws URISyntaxException {
+        // https://devcenter.heroku.com/articles/heroku-redis#connecting-in-java
+        // yay....
         TrustManager bogusTrustManager = new X509TrustManager() {
             public X509Certificate[] getAcceptedIssuers() {
                 return null;
