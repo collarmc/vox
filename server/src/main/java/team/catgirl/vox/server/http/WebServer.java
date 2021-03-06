@@ -23,7 +23,7 @@ public class WebServer {
         port(httpPort());
 
         Jedis jedis;
-        String redisUrl = System.getenv("REDIS_TLS_URL");
+        String redisUrl = System.getenv("REDIS_URL");
         if (redisUrl == null) {
             jedis = new Jedis();
         } else {
