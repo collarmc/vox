@@ -26,13 +26,6 @@ public final class CopusEncoder implements Encoder {
         AudioException.assertOpusError(error.get());
     }
 
-    /**
-     * Produces an opus audio packet
-     * @param rawAudio audio
-     * @param transformer for byte payload
-     * @return byte buffer containing opus audio packet
-     */
-    @Override
     public AudioPacket encodePacket(byte[] rawAudio, Function<byte[], byte[]> transformer) {
         ByteBuffer nonEncodedBuffer = ByteBuffer.allocateDirect(rawAudio.length);
         nonEncodedBuffer.put(rawAudio);

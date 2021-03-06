@@ -25,12 +25,6 @@ public final class OpusDecoder implements Decoder {
         AudioException.assertOpusError(error.get());
     }
 
-    /**
-     * Decodes Audio Packet into raw PCM data
-     * @param packet to decode
-     * @param transformer for byte payload
-     * @return bytes of PCM data
-     */
     @Override
     public byte[] decode(AudioPacket packet, Function<byte[], byte[]> transformer) {
         ByteBuffer backingBuffer = ByteBuffer.allocateDirect(4096);
