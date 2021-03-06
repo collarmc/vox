@@ -16,8 +16,16 @@ import team.catgirl.vox.server.http.HttpException.UnauthorisedException;
 import team.catgirl.vox.server.services.ChannelServiceImpl;
 import team.catgirl.vox.utils.Utils;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -90,6 +98,32 @@ public class WebServer {
     }
 
     private JedisPool createRedis() throws URISyntaxException {
+        TrustManager bogusTrustManager = new X509TrustManager() {
+            public X509Certificate[] getAcceptedIssuers() {
+                return null;
+            }
+
+            public void checkClientTrusted(X509Certificate[] certs, String authType) {
+            }
+
+            public void checkServerTrusted(X509Certificate[] certs, String authType) {
+            }
+        };
+
+        SSLContext sslContext = null;
+        try {
+            sslContext = SSLContext.getInstance("SSL");
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+        try {
+            sslContext.init(null, new TrustManager[]{bogusTrustManager}, SecureRandom.getInstanceStrong());
+        } catch (KeyManagementException | NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+
+        HostnameVerifier bogusHostnameVerifier = (hostname, session) -> true;
+
         JedisPool jedis;
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setMaxTotal(40);
@@ -99,7 +133,7 @@ public class WebServer {
         if (redisUrl == null) {
             jedis = new JedisPool(poolConfig);
         } else {
-            jedis = new JedisPool(poolConfig, new URI(redisUrl));
+            jedis = new JedisPool(poolConfig, new URI(redisUrl), null, null, bogusHostnameVerifier);
         }
         return jedis;
     }
