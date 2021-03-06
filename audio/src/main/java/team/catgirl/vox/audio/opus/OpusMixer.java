@@ -40,6 +40,7 @@ public class OpusMixer implements Mixer {
 
         // Repacketize multiple streams
         for (AudioStreamPacket packet : streamPackets) {
+            System.out.print('r');
             byte[] bytes = transformer.apply(packet);
             int result = Opus.INSTANCE.opus_repacketizer_cat(opusRepacketizerPrt, bytes, bytes.length);
             AudioException.assertOpusError(result);

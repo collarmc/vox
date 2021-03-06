@@ -34,12 +34,12 @@ public class Dialer {
         Channel channel = new Channel(UUID.fromString("00000000-0000-0000-0000-000000000000"));
         Caller caller = new Caller(UUID.randomUUID());
 
-        System.out.println("Requesting grant for channel " + channel);
+        System.out.print(caller + " requesting grant for channel " + channel);
         ChannelServiceClient channelServiceClient = new ChannelServiceClient(httpClient, serverUrl, password);
         byte[] token = channelServiceClient.permit(new PermitAccessRequest(channel, caller)).token;
-        System.out.println("...received grant for channel " + channel);
+        System.out.println("... grant received");
 
-        System.out.println("Dialing...");
+        System.out.print("Dialing...");
         Vox vox = new Vox(
                 httpClient,
                 serverUrl,
@@ -62,7 +62,7 @@ public class Dialer {
         );
         vox.connect();
 
-        System.out.println("...connected!");
+        System.out.println(" ...connected!");
 
         while (true) {
             Thread.sleep(500);
