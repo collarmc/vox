@@ -1,5 +1,6 @@
 package team.catgirl.vox.api.http;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import team.catgirl.vox.api.Caller;
 import team.catgirl.vox.api.Channel;
 
@@ -35,28 +36,34 @@ public interface ChannelService {
     boolean isPermitted(Channel channel, Caller caller);
 
     final class PermitAccessRequest {
+        @JsonProperty("channel")
         public final Channel channel;
+        @JsonProperty("caller")
         public final Caller caller;
 
-        public PermitAccessRequest(Channel channel, Caller caller) {
+        public PermitAccessRequest(@JsonProperty("channel") Channel channel,
+                                   @JsonProperty("caller")Caller caller) {
             this.channel = channel;
             this.caller = caller;
         }
     }
 
     final class PermitAccessResponse {
+        @JsonProperty("token")
         public final byte[] token;
 
-        public PermitAccessResponse(byte[] token) {
+        public PermitAccessResponse(@JsonProperty("token") byte[] token) {
             this.token = token;
         }
     }
 
     final class DenyAccessRequest {
+        @JsonProperty("channel")
         public final Channel channel;
+        @JsonProperty("caller")
         public final Caller caller;
 
-        public DenyAccessRequest(Channel channel, Caller caller) {
+        public DenyAccessRequest(@JsonProperty("channel") Channel channel, @JsonProperty("caller") Caller caller) {
             this.channel = channel;
             this.caller = caller;
         }

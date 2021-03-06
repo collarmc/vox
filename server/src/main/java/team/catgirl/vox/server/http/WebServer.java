@@ -12,6 +12,7 @@ import team.catgirl.vox.server.audio.AudioSubscriberSocket;
 import team.catgirl.vox.server.channels.Multiplexer;
 import team.catgirl.vox.server.http.HttpException.UnauthorisedException;
 import team.catgirl.vox.server.services.ChannelServiceImpl;
+import team.catgirl.vox.utils.Utils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -31,7 +32,7 @@ public class WebServer {
         if (token == null) {
             throw new IllegalStateException("API_TOKEN not set");
         }
-        ObjectMapper mapper = new JsonMapper();
+        ObjectMapper mapper = Utils.jsonMapper();
         ChannelService channels = new ChannelServiceImpl(jedis);
         AudioProducerSocket producerSocket = new AudioProducerSocket(channels);
         Multiplexer multiplexer = new Multiplexer(channels, producerSocket::sendPackets);
@@ -71,11 +72,11 @@ public class WebServer {
                     throw new UnauthorisedException("bad authorization header");
                 }
             });
-            post("permit/accept", (request, response) -> {
+            post("/permit/accept", (request, response) -> {
                 PermitAccessRequest req = mapper.readValue(request.bodyAsBytes(), PermitAccessRequest.class);
                 return channels.permit(req);
             });
-            post("permit/deny", (request, response) -> {
+            post("/permit/deny", (request, response) -> {
                 DenyAccessRequest req = mapper.readValue(request.bodyAsBytes(), DenyAccessRequest.class);
                 return channels.deny(req);
             });
