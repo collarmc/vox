@@ -10,15 +10,19 @@ import team.catgirl.vox.audio.Encoder;
 import team.catgirl.vox.audio.devices.InputDevice;
 import team.catgirl.vox.protocol.SourceAudioPacket;
 
+import javax.sound.sampled.TargetDataLine;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static team.catgirl.vox.audio.OpusSettings.OPUS_FRAME_SIZE;
 
 public class AudioSenderSocket extends WebSocketListener implements Closeable {
 
+    private static final Logger LOGGER = Logger.getLogger(AudioSenderSocket.class.getName());
     private final InputDevice inputDevice;
     private final UUID identity;
     private final UUID channel;
@@ -63,9 +67,14 @@ public class AudioSenderSocket extends WebSocketListener implements Closeable {
         @Override
         public void run() {
             try {
+                TargetDataLine line = inputDevice.getLine();
+                if (!line.isRunning()) {
+                    line.open();
+                    line.start();
+                }
                 while (true) {
                     byte[] buff = new byte[OPUS_FRAME_SIZE * 4];
-                    int read = inputDevice.getLine().read(buff, 0, buff.length);
+                    int read = line.read(buff, 0, buff.length);
                     AudioPacket audioPacket;
                     if (read < 0) {
                         audioPacket = AudioPacket.SILENCE;
@@ -75,8 +84,8 @@ public class AudioSenderSocket extends WebSocketListener implements Closeable {
                     SourceAudioPacket packet = new SourceAudioPacket(identity, channel, audioPacket);
                     try {
                         webSocket.send(ByteString.of(packet.serialize()));
-                    } catch (IOException e) {
-                        throw new IllegalStateException("could not serialize packet");
+                    } catch (Throwable e) {
+                        LOGGER.log(Level.SEVERE, "could not serialize packet", e);
                     }
                     try {
                         Thread.sleep(TimeUnit.MILLISECONDS.toMillis(50));

@@ -38,7 +38,7 @@ public final class SourceAudioPacket {
                 }
                 owner = IO.readUUID(dataStream);
                 channel = IO.readUUID(dataStream);
-                audio = new AudioPacket(IO.readBytes(dataStream));
+                audio = AudioPacket.deserialize(IO.readBytes(dataStream));
             }
         }
     }

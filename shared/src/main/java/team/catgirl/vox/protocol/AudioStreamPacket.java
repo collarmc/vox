@@ -27,7 +27,7 @@ public final class AudioStreamPacket {
                     throw new IllegalStateException("unknown version " + version);
                 }
                 owner = IO.readUUID(dataStream);
-                audio = new AudioPacket(IO.readBytes(dataStream));
+                audio = AudioPacket.deserialize(IO.readBytes(dataStream));
             }
         }
     }

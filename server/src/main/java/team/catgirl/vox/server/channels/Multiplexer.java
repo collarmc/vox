@@ -1,5 +1,6 @@
 package team.catgirl.vox.server.channels;
 
+import com.google.common.collect.EvictingQueue;
 import team.catgirl.vox.protocol.AudioPacket;
 import team.catgirl.vox.audio.Mixer;
 import team.catgirl.vox.protocol.SourceAudioPacket;
@@ -37,12 +38,8 @@ public class Multiplexer {
                 newChannel.set(channelState);
             }
             channelState.packetQueues.compute(packet.owner, (identityId, audioPackets) -> {
-                audioPackets = audioPackets == null ? new LinkedBlockingDeque<>(500) : audioPackets;
-                if (!audioPackets.offer(packet.audio)) {
-                    LOGGER.log(Level.WARNING, "Dropped packet from " + packet.owner + " destined for channel " + packet.channel);
-                } else {
-                    LOGGER.log(Level.INFO, "Received packet from " + packet.owner + " destined for channel " + packet.channel);
-                }
+                audioPackets = audioPackets == null ? new LinkedBlockingDeque<>(Short.MAX_VALUE) : audioPackets;
+                audioPackets.offer(packet.audio);
                 return audioPackets;
             });
             return channelState;

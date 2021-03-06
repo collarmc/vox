@@ -12,9 +12,9 @@ public final class IO {
      * @throws IOException on error
      */
     public static void writeBytes(DataOutputStream os, byte[] bytes) throws IOException {
-        os.write(bytes.length);
+        os.writeInt(bytes.length);
         for (byte b : bytes) {
-            os.write(b);
+            os.writeByte(b);
         }
     }
 
@@ -25,7 +25,10 @@ public final class IO {
      * @throws IOException on error
      */
     public static byte[] readBytes(DataInputStream is) throws IOException {
-        int length = is.read();
+        int length = is.readInt();
+        if (length < 0) {
+            throw new IOException("bad array structure");
+        }
         byte[] bytes = new byte[length];
         for (int i = 0; i < length; i++) {
             bytes[i] = is.readByte();

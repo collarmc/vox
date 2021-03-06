@@ -30,14 +30,12 @@ public class AudioProducerSocket {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
-        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bytes.length);
-        byteBuffer.put(bytes);
-        byteBuffer.flip();
+        ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
         Set<Session> sessions = channelSessions.get(channel);
         if (sessions == null) {
             return;
         }
-        sessions.forEach(session -> session.getRemote().sendBytesByFuture(byteBuffer));
+        sessions.stream().filter(Session::isOpen).forEach(session -> session.getRemote().sendBytesByFuture(byteBuffer));
     }
 
     @OnWebSocketConnect

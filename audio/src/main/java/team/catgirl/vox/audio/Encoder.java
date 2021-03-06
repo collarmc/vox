@@ -35,7 +35,7 @@ public final class Encoder implements Closeable {
         AudioException.assertOpusError(result);
         byte[] encodedByte = new byte[result];
         encoded.get(encodedByte);
-        return new AudioPacket(encodedByte);
+        return AudioPacket.fromEncodedBytes(encodedByte);
     }
 
     @Override

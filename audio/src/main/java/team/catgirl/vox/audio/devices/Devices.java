@@ -1,5 +1,7 @@
 package team.catgirl.vox.audio.devices;
 
+import team.catgirl.vox.audio.AudioException;
+
 import javax.sound.sampled.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,17 +40,19 @@ public final class Devices {
     public InputDevice getDefaultInputDevice() {
         TargetDataLine line;
         final DataLine.Info info = new DataLine.Info(TargetDataLine.class, OUTPUT_FORMAT);
-        if (!AudioSystem.isLineSupported(info)) { return null; }
+        if (!AudioSystem.isLineSupported(info)) {
+            throw new AudioException("input device not found");
+        }
         try {
             line = (TargetDataLine) AudioSystem.getLine(info);
         } catch (final Exception ex) {
-            return null;
+            throw new AudioException("input device not found");
         }
         refresh();
         return inputDevices.stream()
                 .filter(inputDevice -> inputDevice.getLine().getLineInfo().equals(line.getLineInfo()))
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new AudioException("input device not found"));
     }
 
     /**
@@ -57,17 +61,19 @@ public final class Devices {
     public OutputDevice getDefaultOutputDevice() {
         SourceDataLine line;
         final DataLine.Info info = new DataLine.Info(SourceDataLine.class, OUTPUT_FORMAT);
-        if (!AudioSystem.isLineSupported(info)) { return null; }
+        if (!AudioSystem.isLineSupported(info)) {
+            throw new AudioException("input device not found");
+        }
         try {
             line = (SourceDataLine) AudioSystem.getLine(info);
         } catch (final Exception ex) {
-            return null;
+            throw new AudioException("input device not found");
         }
         refresh();
         return outputDevices.stream()
                 .filter(outputDevice -> outputDevice.getLine().getLineInfo().equals(line.getLineInfo()))
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new AudioException("output device not found"));
     }
 
     /**
@@ -83,11 +89,15 @@ public final class Devices {
             final Mixer mixer = AudioSystem.getMixer(info);
             try {
                 TargetDataLine line = (TargetDataLine) mixer.getLine(inputInfo);
-                inputDevices.add(new InputDevice(line, mixer.getMixerInfo()));
+                if (line != null) {
+                    inputDevices.add(new InputDevice(line, mixer.getMixerInfo()));
+                }
             } catch (LineUnavailableException|IllegalArgumentException ignored) {}
             try {
                 SourceDataLine line = (SourceDataLine) mixer.getLine(outputInfo);
-                outputDevices.add(new OutputDevice(line, mixer.getMixerInfo()));
+                if (line != null) {
+                    outputDevices.add(new OutputDevice(line, mixer.getMixerInfo()));
+                }
             } catch (LineUnavailableException|IllegalArgumentException ignored) {}
         }
 

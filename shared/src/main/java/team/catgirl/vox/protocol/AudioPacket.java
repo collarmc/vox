@@ -15,8 +15,12 @@ public final class AudioPacket {
 
     public final byte[] audio;
 
-    public AudioPacket(byte[] audio) {
+    private AudioPacket(byte[] audio) {
         this.audio = audio;
+    }
+
+    public static AudioPacket fromEncodedBytes(byte[] audio) {
+        return new AudioPacket(audio);
     }
 
     public static AudioPacket deserialize(byte[] bytes) {
@@ -26,7 +30,7 @@ public final class AudioPacket {
                 if (version != VERSION) {
                     throw new IllegalArgumentException("unknown audio packet version " + version);
                 }
-                return new AudioPacket(IO.readBytes(dataStream));
+                return AudioPacket.fromEncodedBytes(IO.readBytes(dataStream));
             }
         } catch (IOException e) {
             throw new IllegalArgumentException("could not deserialize audio packet", e);
@@ -43,5 +47,9 @@ public final class AudioPacket {
         } catch (IOException e) {
             throw new IllegalArgumentException("could not serialize audio packet", e);
         }
+    }
+
+    public boolean isEmpty() {
+        return audio.length == 0;
     }
 }

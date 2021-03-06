@@ -1,5 +1,6 @@
 package team.catgirl.vox.client;
 
+import com.google.common.collect.EvictingQueue;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
@@ -13,17 +14,26 @@ import team.catgirl.vox.audio.devices.OutputDevice;
 import team.catgirl.vox.protocol.IdentifyPacket;
 import team.catgirl.vox.protocol.OutputAudioPacket;
 
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.SourceDataLine;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class AudioReceiverSocket extends WebSocketListener implements Closeable {
+
+    private static final Logger LOGGER = Logger.getLogger(AudioReceiverSocket.class.getName());
 
     private final OutputDevice outputDevice;
     private final UUID identity;
     private final UUID channel;
     private final Decoder decoder = new Decoder();
     private final Mixer mixer = new Mixer();
+    private final LinkedBlockingDeque<OutputAudioPacket> packets = new LinkedBlockingDeque<>(Short.MAX_VALUE);
+    private final Thread soundPlayer = new Thread(new SoundPlayer());
 
     public AudioReceiverSocket(OutputDevice outputDevice, UUID identity, UUID channel) {
         this.outputDevice = outputDevice;
@@ -40,6 +50,7 @@ public class AudioReceiverSocket extends WebSocketListener implements Closeable 
     @Override
     public void onOpen(@NotNull WebSocket webSocket, @NotNull Response response) {
         super.onOpen(webSocket, response);
+        soundPlayer.start();
         IdentifyPacket identifyPacket = new IdentifyPacket(identity, channel);
         try {
             webSocket.send(ByteString.of(identifyPacket.serialize()));
@@ -49,16 +60,48 @@ public class AudioReceiverSocket extends WebSocketListener implements Closeable 
     }
 
     @Override
+    public void onClosing(@NotNull WebSocket webSocket, int code, @NotNull String reason) {
+        super.onClosing(webSocket, code, reason);
+        if (soundPlayer != null && soundPlayer.isAlive()) {
+            soundPlayer.interrupt();
+        }
+    }
+
+    @Override
     public void onMessage(@NotNull WebSocket webSocket, @NotNull ByteString bytes) {
+        OutputAudioPacket packet;
         try {
-            OutputAudioPacket packet = new OutputAudioPacket(bytes.toByteArray());
-            AudioPacket audioPacket = mixer.mix(packet.streamPackets);
-            byte[] pcm = decoder.decode(audioPacket);
-            System.out.println("Packet size " + audioPacket.audio.length);
-            outputDevice.getLine().write(pcm, 0, pcm.length);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
+            packet = new OutputAudioPacket(bytes.toByteArray());
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Could not deserialize OutputAudioPacket", e);
+            return;
+        }
+        packets.offer(packet);
+    }
+
+    class SoundPlayer implements Runnable {
+        @Override
+        public void run() {
+            try (SourceDataLine line = outputDevice.getLine()) {
+                try {
+                    line.open();
+                } catch (LineUnavailableException e) {
+                    throw new RuntimeException(e);
+                }
+                line.start();
+                while (true) {
+                    OutputAudioPacket packet = packets.poll();
+                    if (packet == null) {
+                        continue;
+                    }
+                    AudioPacket audioPacket = mixer.mix(packet);
+                    if (audioPacket.isEmpty()) {
+                        continue;
+                    }
+                    byte[] pcm = decoder.decode(audioPacket);
+                    line.write(pcm, 0, pcm.length);
+                }
+            }
         }
     }
 
