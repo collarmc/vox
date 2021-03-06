@@ -9,10 +9,48 @@ import tomp2p.opuswrapper.Opus;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.List;
-import java.util.UUID;
+import java.nio.ByteBuffer;
 
 public class Mixer implements Closeable {
+
+    public static final int BUFFER_SIZE = 1276;
+
+    private final PointerByReference opusRepacketizerPrt;
+    private final ByteBuffer buffer;
+
+    public Mixer() {
+        this.buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
+        this.opusRepacketizerPrt = Opus.INSTANCE.opus_repacketizer_create();
+    }
+
+    public AudioPacket mix(OutputAudioPacket packets) {
+        // If there are no packets then return silence
+        if (packets.streamPackets.isEmpty()) {
+            return AudioPacket.SILENCE;
+        }
+        // If there is just one packet, no need to repacketize
+        if (packets.streamPackets.size() == 1) {
+            return packets.streamPackets.get(0).audio;
+        }
+        // Repacketize multiple streams
+        for (AudioStreamPacket packet : packets.streamPackets) {
+            int result = Opus.INSTANCE.opus_repacketizer_cat(opusRepacketizerPrt, packet.audio.audio, packet.audio.audio.length);
+            AudioException.assertOpusError(result);
+        }
+        int size = Opus.INSTANCE.opus_repacketizer_out(this.opusRepacketizerPrt, buffer, buffer.capacity());
+        if (size < 0) {
+            throw new AudioException("could not mix audio");
+        }
+        buffer.flip();
+        byte[] out = new byte[buffer.limit()];
+        buffer.get(out);
+        return AudioPacket.fromEncodedBytes(out);
+    }
+
+    @Override
+    public void close() {
+        Opus.INSTANCE.opus_repacketizer_destroy(opusRepacketizerPrt);
+    }
 
     static {
         try {
@@ -20,36 +58,5 @@ public class Mixer implements Closeable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private final PointerByReference opusRepacketizerPrt;
-
-    public Mixer() {
-        this.opusRepacketizerPrt = Opus.INSTANCE.opus_repacketizer_create();
-    }
-
-    public AudioPacket mix(OutputAudioPacket packets) {
-        // TODO: mix packets instead of just returning the first one
-        return packets.streamPackets.stream().findFirst().map(streamPacket -> streamPacket.audio).orElse(AudioPacket.SILENCE);
-//        for (AudioPacket packet : packets) {
-//            int result = Opus.INSTANCE.opus_repacketizer_cat(opusRepacketizerPrt, packet.audio, packet.audio.length);
-//            if (result != Opus.OPUS_OK) {
-//                throw new AudioException("could not mix packets");
-//            }
-//        }
-//        ByteBuffer buffer = ByteBuffer.allocateDirect(1276);
-//        int size = Opus.INSTANCE.opus_repacketizer_out(this.opusRepacketizerPrt, buffer, 1276);
-//        if (size < 0) {
-//            throw new AudioException("could not mix audio");
-//        }
-//        buffer.flip();
-//        byte[] out = new byte[buffer.limit()];
-//        buffer.get(out);
-//        return new AudioPacket(out);
-    }
-
-    @Override
-    public void close() {
-        Opus.INSTANCE.opus_repacketizer_destroy(opusRepacketizerPrt);
     }
 }
