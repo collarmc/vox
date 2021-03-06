@@ -10,7 +10,9 @@ import team.catgirl.vox.protocol.OutputAudioPacket;
 import tomp2p.opuswrapper.Opus;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class OpusMixer implements Mixer {
 
@@ -27,18 +29,17 @@ public class OpusMixer implements Mixer {
     @Override
     public AudioPacket mix(OutputAudioPacket packets, Function<AudioStreamPacket, byte[]> transformer) {
         // If there are no packets then return silence
-        if (packets.streamPackets.isEmpty()) {
+        List<AudioStreamPacket> streamPackets = packets.streamPackets.stream().filter(streamPacket -> !streamPacket.audio.isEmpty()).collect(Collectors.toList());
+        if (streamPackets.isEmpty()) {
             return AudioPacket.SILENCE;
         }
         // If there is just one packet, no need to repacketize
-        if (packets.streamPackets.size() == 1) {
+        if (streamPackets.size() == 1) {
             return packets.streamPackets.get(0).audio;
         }
+
         // Repacketize multiple streams
-        for (AudioStreamPacket packet : packets.streamPackets) {
-            if (packet.audio.isEmpty()) {
-                continue;
-            }
+        for (AudioStreamPacket packet : streamPackets) {
             byte[] bytes = transformer.apply(packet);
             int result = Opus.INSTANCE.opus_repacketizer_cat(opusRepacketizerPrt, bytes, bytes.length);
             AudioException.assertOpusError(result);
