@@ -4,6 +4,7 @@ import okhttp3.OkHttpClient;
 import team.catgirl.vox.api.Caller;
 import team.catgirl.vox.api.Channel;
 import team.catgirl.vox.api.http.ChannelService;
+import team.catgirl.vox.api.http.ChannelService.PermitAccessRequest;
 import team.catgirl.vox.audio.devices.Devices;
 import team.catgirl.vox.client.Vox;
 import team.catgirl.vox.client.admin.ChannelServiceClient;
@@ -23,8 +24,9 @@ public class Dialer {
         }
 
         String serverUrl = args[0];
+        System.out.println("Server '" + serverUrl + "'");
         String password = args[1];
-        System.out.println("Setting up dialer...");
+        System.out.println("Password '" + password + "'");
 
         OkHttpClient httpClient = new OkHttpClient();
         Devices devices = new Devices();
@@ -32,12 +34,12 @@ public class Dialer {
         Channel channel = new Channel(UUID.fromString("00000000-0000-0000-0000-000000000000"));
         Caller caller = new Caller(UUID.randomUUID());
 
+        System.out.println("Requesting grant for channel " + channel);
         ChannelServiceClient channelServiceClient = new ChannelServiceClient(httpClient, serverUrl, password);
+        byte[] token = channelServiceClient.permit(new PermitAccessRequest(channel, caller)).token;
+        System.out.println("...received grant for channel " + channel);
 
-        byte[] token = channelServiceClient.permit(new ChannelService.PermitAccessRequest(channel, caller)).token;
-
-        System.out.println("Received grant for channel " + channel);
-
+        System.out.println("Dialing...");
         Vox vox = new Vox(
                 httpClient,
                 serverUrl,
@@ -59,6 +61,8 @@ public class Dialer {
                 }
         );
         vox.connect();
+
+        System.out.println("...connected!");
 
         while (true) {
             Thread.sleep(500);

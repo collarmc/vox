@@ -59,19 +59,18 @@ public class WebServer {
         webSocket("/api/1/audio/send", subscriberSocket);
         webSocket("/api/1/audio/listen", producerSocket);
 
-        before("/api/1/channels", (request, response) -> {
-            String authorization = request.headers("Authorization");
-            if (authorization.startsWith("Bearer ")) {
-                String tokenString = authorization.substring(authorization.indexOf(" ") + 1);
-                if (tokenString.equals(token)) {
-                    throw new UnauthorisedException("expired token");
-                }
-            } else {
-                throw new UnauthorisedException("bad authorization header");
-            }
-        });
-
         path("/api/1/channels", () -> {
+            before((request, response) -> {
+                String authorization = request.headers("Authorization");
+                if (authorization.startsWith("Bearer ")) {
+                    String tokenString = authorization.substring(authorization.indexOf(" ") + 1);
+                    if (tokenString.equals(token)) {
+                        throw new UnauthorisedException("expired token");
+                    }
+                } else {
+                    throw new UnauthorisedException("bad authorization header");
+                }
+            });
             post("permit/accept", (request, response) -> {
                 PermitAccessRequest req = mapper.readValue(request.bodyAsBytes(), PermitAccessRequest.class);
                 return channels.permit(req);
