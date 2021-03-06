@@ -20,27 +20,35 @@ public class ChannelServiceImpl implements ChannelService {
 
     @Override
     public PermitAccessResponse permit(PermitAccessRequest req) {
-        byte[] token = TokenGenerator.byteToken(16);
-        redis.get().set(permitKey(req.channel, req.caller), BaseEncoding.base64().encode(token));
-        return new PermitAccessResponse(token);
+        try (Jedis jedis = redis.get()) {
+            byte[] token = TokenGenerator.byteToken(16);
+            jedis.set(permitKey(req.channel, req.caller), BaseEncoding.base64().encode(token));
+            return new PermitAccessResponse(token);
+        }
     }
 
     @Override
     public DenyAccessResponse deny(DenyAccessRequest req) {
-        redis.get().del(permitKey(req.channel, req.caller));
-        return new DenyAccessResponse();
+        try (Jedis jedis = redis.get()) {
+            jedis.del(permitKey(req.channel, req.caller));
+            return new DenyAccessResponse();
+        }
     }
 
     @Override
     public boolean isPermitted(Channel channel, Caller caller, byte[] permit) {
-        String encodedToken = redis.get().get(permitKey(channel, caller));
-        return encodedToken != null && Arrays.equals(BaseEncoding.base64().decode(encodedToken), permit);
+        try (Jedis jedis = redis.get()) {
+            String encodedToken = jedis.get(permitKey(channel, caller));
+            return encodedToken != null && Arrays.equals(BaseEncoding.base64().decode(encodedToken), permit);
+        }
     }
 
     @Override
     public boolean isPermitted(Channel channel, Caller caller) {
-        String encodedToken = redis.get().get(permitKey(channel, caller));
-        return encodedToken != null;
+        try (Jedis jedis = redis.get()) {
+            String encodedToken = jedis.get(permitKey(channel, caller));
+            return encodedToken != null;
+        }
     }
 
     private static String permitKey(Channel channel, Caller caller) {
