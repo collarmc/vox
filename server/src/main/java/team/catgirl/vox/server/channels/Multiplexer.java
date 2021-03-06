@@ -30,6 +30,10 @@ public class Multiplexer {
         this.packetConsumer = packetConsumer;
     }
 
+    /**
+     * Receive packets for processing
+     * @param packet to process
+     */
     public void receive(SourceAudioPacket packet) {
         AtomicReference<ChannelState> newChannel = new AtomicReference<>();
         channels.compute(packet.channel, (channelId, channelState) -> {
@@ -49,6 +53,14 @@ public class Multiplexer {
             Future<?> future = consumerExecutor.submit(new ChannelProcessor(channelState, packetConsumer));
             channelProcessors.put(channelState.channel, future);
         };
+    }
+
+    public void stop(Channel channel) {
+        Future<?> removed = channelProcessors.remove(channel);
+        if (removed == null){
+            return;
+        }
+        removed.cancel(true);
     }
 
     private static class ChannelProcessor implements Runnable, Closeable {

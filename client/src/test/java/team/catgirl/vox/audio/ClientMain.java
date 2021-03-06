@@ -1,4 +1,4 @@
-package team.catgirl.vox.client.debug;
+package team.catgirl.vox.audio;
 
 import okhttp3.OkHttpClient;
 import team.catgirl.vox.api.Caller;

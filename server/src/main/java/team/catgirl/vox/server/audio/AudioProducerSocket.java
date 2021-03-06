@@ -25,6 +25,7 @@ public class AudioProducerSocket {
 
     private final ConcurrentMap<Channel, Map<Caller, Session>> channelSessions = new ConcurrentHashMap<>();
     private final ConcurrentMap<Session, Channel> sessionToChannelId = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Session, Caller> sessionToCaller = new ConcurrentHashMap<>();
 
     public void sendPackets(Channel channel, List<AudioStreamPacket> packets) {
         Map<Caller, Session> sessions = channelSessions.get(channel);
@@ -47,30 +48,36 @@ public class AudioProducerSocket {
         });
     }
 
-    @OnWebSocketConnect
-    public void onConnect(Session session) {
-        System.out.println("Connected to AudioProducerSocket!");
-    }
-
-    @OnWebSocketClose
-    public void onClose(Session session) {
-        Channel channel = sessionToChannelId.remove(session);
-//        if (channel != null) {
-//            channelSessions.compute(channel, (uuid, sessionMap) -> {
-////                sessionMap.remove(c
-//            });
-//        }
-    }
-
     @OnWebSocketMessage
     public void receivePacket(Session session, InputStream stream) throws IOException {
         byte[] bytes = IO.toByteArray(stream);
         IdentifyPacket packet = new IdentifyPacket(bytes);
         channelSessions.compute(packet.channel, (channelId, sessions) -> {
             sessions = sessions == null ? new ConcurrentHashMap<>() : sessions;
-            sessions.put(packet.owner, session);
+            sessions.putIfAbsent(packet.caller, session);
             return sessions;
         });
         sessionToChannelId.putIfAbsent(session, packet.channel);
+        sessionToCaller.putIfAbsent(session, packet.caller);
+    }
+
+
+    @OnWebSocketClose
+    public void onClose(Session session) {
+        Channel channel = sessionToChannelId.remove(session);
+        if (channel == null) {
+            return;
+        }
+        Caller caller = sessionToCaller.remove(session);
+        if (caller == null) {
+            return;
+        }
+        channelSessions.compute(channel, (theChannel, sessionMap) -> {
+            if (sessionMap == null) {
+                return null;
+            }
+            sessionMap.remove(caller);
+            return sessionMap;
+        });
     }
 }
