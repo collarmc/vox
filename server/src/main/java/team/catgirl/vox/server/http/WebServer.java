@@ -27,13 +27,19 @@ public class WebServer {
 
     public void start() throws Exception {
         port(httpPort());
-        Jedis jedis = createRedis();
         String token = System.getenv("API_TOKEN");
         if (token == null) {
             throw new IllegalStateException("API_TOKEN not set");
         }
         ObjectMapper mapper = Utils.jsonMapper();
-        ChannelService channels = new ChannelServiceImpl(jedis);
+        ChannelService channels = new ChannelServiceImpl(() -> {
+            try {
+                // TODO: convert this to use jedis pool
+                return createRedis();
+            } catch (URISyntaxException e) {
+                throw new IllegalStateException(e);
+            }
+        });
         AudioProducerSocket producerSocket = new AudioProducerSocket(channels);
         Multiplexer multiplexer = new Multiplexer(channels, producerSocket::sendPackets);
         AudioSubscriberSocket subscriberSocket = new AudioSubscriberSocket(multiplexer);
