@@ -13,9 +13,6 @@ import java.util.function.Function;
 
 import static tomp2p.opuswrapper.Opus.*;
 
-/**
- * Audio encoder
- */
 public final class CopusEncoder implements Encoder {
 
     private final PointerByReference encoder;

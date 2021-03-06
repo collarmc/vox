@@ -12,9 +12,6 @@ import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.util.function.Function;
 
-/**
- * Audio decoder
- */
 public final class OpusDecoder implements Decoder {
 
     private final PointerByReference decoderPtr;

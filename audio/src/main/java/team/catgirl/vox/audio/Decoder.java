@@ -5,6 +5,9 @@ import team.catgirl.vox.protocol.AudioPacket;
 import java.io.Closeable;
 import java.util.function.Function;
 
+/**
+ * Audio decoder
+ */
 public interface Decoder extends Closeable {
     /**
      * Decodes Audio Packet into raw PCM data
