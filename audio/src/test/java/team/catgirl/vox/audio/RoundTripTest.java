@@ -33,7 +33,7 @@ public class RoundTripTest {
         }
 
         try (InputStream audioStream = song.openStream()) {
-            AudioFormat format = new AudioFormat(44100, 16, 1, true, false);
+            AudioFormat format = new AudioFormat(44100, 16, 2, true, false);
             int sampleSize = (int) ((format.getSampleRate() / format.getSampleSizeInBits()) * format.getChannels());
             byte[] bytes = new byte[sampleSize];
             try (Encoder encoder = new OpusEncoder()) {
