@@ -98,33 +98,33 @@ public class WebServer {
     }
 
     private JedisPool createRedis() throws URISyntaxException {
-        // https://devcenter.heroku.com/articles/heroku-redis#connecting-in-java
-        // yay....
-        TrustManager bogusTrustManager = new X509TrustManager() {
-            public X509Certificate[] getAcceptedIssuers() {
-                return null;
-            }
-
-            public void checkClientTrusted(X509Certificate[] certs, String authType) {
-            }
-
-            public void checkServerTrusted(X509Certificate[] certs, String authType) {
-            }
-        };
-
-        SSLContext sslContext;
-        try {
-            sslContext = SSLContext.getInstance("SSL");
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
-        try {
-            sslContext.init(null, new TrustManager[]{ bogusTrustManager }, new SecureRandom());
-        } catch (KeyManagementException e) {
-            throw new IllegalStateException(e);
-        }
-
-        HostnameVerifier bogusHostnameVerifier = (hostname, session) -> true;
+//        // https://devcenter.heroku.com/articles/heroku-redis#connecting-in-java
+//        // yay....
+//        TrustManager bogusTrustManager = new X509TrustManager() {
+//            public X509Certificate[] getAcceptedIssuers() {
+//                return null;
+//            }
+//
+//            public void checkClientTrusted(X509Certificate[] certs, String authType) {
+//            }
+//
+//            public void checkServerTrusted(X509Certificate[] certs, String authType) {
+//            }
+//        };
+//
+//        SSLContext sslContext;
+//        try {
+//            sslContext = SSLContext.getInstance("SSL");
+//        } catch (NoSuchAlgorithmException e) {
+//            throw new IllegalStateException(e);
+//        }
+//        try {
+//            sslContext.init(null, new TrustManager[]{ bogusTrustManager }, new SecureRandom());
+//        } catch (KeyManagementException e) {
+//            throw new IllegalStateException(e);
+//        }
+//
+//        HostnameVerifier bogusHostnameVerifier = (hostname, session) -> true;
 
         JedisPool jedis;
         JedisPoolConfig poolConfig = new JedisPoolConfig();
@@ -135,7 +135,8 @@ public class WebServer {
         if (redisUrl == null) {
             jedis = new JedisPool(poolConfig);
         } else {
-            jedis = new JedisPool(poolConfig, new URI(redisUrl), null, null, bogusHostnameVerifier);
+//            jedis = new JedisPool(poolConfig, new URI(redisUrl), null, null, bogusHostnameVerifier);
+            jedis = new JedisPool(poolConfig, new URI(redisUrl));
         }
         return jedis;
     }
