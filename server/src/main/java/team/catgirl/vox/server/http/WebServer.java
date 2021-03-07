@@ -2,8 +2,6 @@ package team.catgirl.vox.server.http;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import team.catgirl.vox.api.http.ChannelService;
@@ -13,19 +11,12 @@ import team.catgirl.vox.server.audio.AudioProducerSocket;
 import team.catgirl.vox.server.audio.AudioSubscriberSocket;
 import team.catgirl.vox.server.channels.Multiplexer;
 import team.catgirl.vox.server.http.HttpException.UnauthorisedException;
-import team.catgirl.vox.server.services.ChannelServiceImpl;
+import team.catgirl.vox.server.services.InMemoryChannelServiceImpl;
+import team.catgirl.vox.server.services.ReddisChannelServiceImpl;
 import team.catgirl.vox.utils.Utils;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,10 +33,10 @@ public class WebServer {
             throw new IllegalStateException("API_TOKEN not set");
         }
 
-        JedisPool jedisPool = createRedis();
+//        JedisPool jedisPool = createRedis();
 
         ObjectMapper mapper = Utils.jsonMapper();
-        ChannelService channels = new ChannelServiceImpl(jedisPool::getResource);
+        ChannelService channels = new InMemoryChannelServiceImpl();
         AudioProducerSocket producerSocket = new AudioProducerSocket(channels);
         Multiplexer multiplexer = new Multiplexer(channels, producerSocket::sendPackets);
         AudioSubscriberSocket subscriberSocket = new AudioSubscriberSocket(multiplexer);
