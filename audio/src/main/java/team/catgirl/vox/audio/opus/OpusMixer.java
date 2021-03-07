@@ -36,6 +36,7 @@ public class OpusMixer implements Mixer {
         }
         // If there is just one packet, no need to repacketize
         if (streamPackets.size() == 1) {
+            System.out.print('1');
             byte[] bytes = transformer.apply(packets.streamPackets.get(0));
             return AudioPacket.fromEncodedBytes(bytes);
         }
