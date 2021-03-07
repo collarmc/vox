@@ -31,10 +31,12 @@ public class OpusMixer implements Mixer {
         // If there are no packets then return silence
         List<AudioStreamPacket> streamPackets = packets.streamPackets.stream().filter(streamPacket -> !streamPacket.audio.isEmpty()).collect(Collectors.toList());
         if (streamPackets.isEmpty()) {
+            System.out.print('s');
             return AudioPacket.SILENCE;
         }
         // If there is just one packet, no need to repacketize
         if (streamPackets.size() == 1) {
+            System.out.print('1');
             return packets.streamPackets.get(0).audio;
         }
 
