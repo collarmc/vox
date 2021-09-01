@@ -22,7 +22,7 @@ public interface Mixer extends Closeable {
 
     /**
      * Mute a caller
-     * @param caller
+     * @param caller to mute
      */
     void mute(Caller caller);
 
