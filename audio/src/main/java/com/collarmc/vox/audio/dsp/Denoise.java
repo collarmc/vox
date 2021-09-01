@@ -1,4 +1,4 @@
-package com.collarmc.vox.audio.rnnoise;
+package com.collarmc.vox.audio.dsp;
 
 import com.collarmc.vox.audio.jna.CLibrary;
 import com.collarmc.vox.audio.jna.LibraryLoader;
@@ -18,7 +18,6 @@ public final class Denoise implements Closeable {
 
     public Denoise() {
         this.noise = LibraryLoader.load("librnnoise", RNNoiseNative.class);
-
         File path = unpackModel();
         CLibrary.FILE file = CLibrary.INSTANCE.fopen(path.getAbsolutePath(), "r");
         try {
@@ -76,7 +75,7 @@ public final class Denoise implements Closeable {
     /**
      * Native interface for rnnoise
      */
-    public interface RNNoiseNative extends Library {
+    interface RNNoiseNative extends Library {
         int rnnoise_get_frame_size();
         int rnnoise_init(DenoiseState st, RNNModel model);
         DenoiseState rnnoise_create(RNNModel  model);
@@ -86,9 +85,9 @@ public final class Denoise implements Closeable {
         void rnnoise_model_free(RNNModel model);
     }
 
-    public static class DenoiseState extends PointerByReference {}
+    static class DenoiseState extends PointerByReference {}
 
-    public static class RNNModel extends PointerByReference {}
+    static class RNNModel extends PointerByReference {}
 
     private static File unpackModel() {
         File model;

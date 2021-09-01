@@ -6,7 +6,7 @@ import com.collarmc.vox.audio.devices.InputDevice;
 import com.collarmc.vox.audio.opus.OpusCodec;
 import com.collarmc.vox.audio.opus.OpusEncoder;
 import com.collarmc.vox.audio.opus.OpusSettings;
-import com.collarmc.vox.audio.rnnoise.Denoise;
+import com.collarmc.vox.audio.dsp.Denoise;
 import com.collarmc.vox.protocol.AudioPacket;
 import com.collarmc.vox.protocol.SourceAudioPacket;
 import com.collarmc.vox.security.Cipher;
@@ -23,8 +23,6 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.TargetDataLine;
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
