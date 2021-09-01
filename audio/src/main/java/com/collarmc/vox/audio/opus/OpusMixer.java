@@ -9,6 +9,8 @@ import com.collarmc.vox.protocol.AudioPacket;
 
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -19,6 +21,7 @@ public class OpusMixer implements Mixer {
     private final OpusCodec codec;
     private final PointerByReference opusRepacketizerPrt;
     private final ByteBuffer buffer;
+    private final CopyOnWriteArraySet<Caller> mutedCallers = new CopyOnWriteArraySet<>();
 
     public OpusMixer(OpusCodec codec) {
         this.codec = codec;
@@ -29,7 +32,11 @@ public class OpusMixer implements Mixer {
     @Override
     public AudioPacket mix(OutputAudioPacket packets, Function<AudioStreamPacket, byte[]> transformer) {
         // If there are no packets then return silence
-        List<AudioStreamPacket> streamPackets = packets.streamPackets.stream().filter(streamPacket -> !streamPacket.audio.isEmpty()).collect(Collectors.toList());
+        List<AudioStreamPacket> streamPackets = packets.streamPackets.stream()
+                .filter(packet -> !mutedCallers.contains(packet.owner))
+                .filter(packet -> !packet.audio.isEmpty())
+                .collect(Collectors.toList());
+
         if (streamPackets.isEmpty()) {
             System.out.print('s');
             return AudioPacket.SILENCE;
@@ -41,7 +48,7 @@ public class OpusMixer implements Mixer {
             return AudioPacket.fromEncodedBytes(bytes);
         }
 
-        // Repacketize multiple streams
+        // Re-packetize multiple streams
         for (AudioStreamPacket packet : streamPackets) {
             System.out.print('r');
             byte[] bytes = transformer.apply(packet);
@@ -58,12 +65,17 @@ public class OpusMixer implements Mixer {
 
     @Override
     public void mute(Caller caller) {
-
+        mutedCallers.add(caller);
     }
 
     @Override
-    public void unmute(Caller caller) {
+    public void unMute(Caller caller) {
+        mutedCallers.remove(caller);
+    }
 
+    @Override
+    public boolean isMuted(Caller caller) {
+        return mutedCallers.contains(caller);
     }
 
     @Override

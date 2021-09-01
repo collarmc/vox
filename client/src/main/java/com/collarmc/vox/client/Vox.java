@@ -44,6 +44,9 @@ public final class Vox implements Closeable {
         audioSenderSocket.request();
     }
 
+    /**
+     * Disconnects from the channel
+     */
     public void disconnect() {
         audioReceiverSocket.cancel();
         audioReceiverSocket = null;

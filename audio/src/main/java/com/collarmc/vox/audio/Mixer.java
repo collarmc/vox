@@ -20,7 +20,22 @@ public interface Mixer extends Closeable {
      */
     AudioPacket mix(OutputAudioPacket packets, Function<AudioStreamPacket, byte[]> transformer);
 
+    /**
+     * Mute a caller
+     * @param caller
+     */
     void mute(Caller caller);
 
-    void unmute(Caller caller);
+    /**
+     * UnMute a caller
+     * @param caller to unMute
+     */
+    void unMute(Caller caller);
+
+    /**
+     * Tests if caller is muted
+     * @param caller to test
+     * @return muted
+     */
+    boolean isMuted(Caller caller);
 }
