@@ -25,8 +25,7 @@ public final class OpusEncoder implements Encoder {
     public AudioPacket encodePacket(byte[] rawAudio, Function<byte[], byte[]> transformer) {
         ByteBuffer nonEncodedBuffer = ByteBuffer.allocateDirect(rawAudio.length);
         nonEncodedBuffer.put(rawAudio);
-        nonEncodedBuffer.limit(nonEncodedBuffer.position());
-        nonEncodedBuffer.position(0);
+        nonEncodedBuffer.flip();
 
         ByteBuffer encoded = ByteBuffer.allocateDirect(4096);
         int result = codec.opus_encode(encoder, nonEncodedBuffer.asShortBuffer(), OpusSettings.OPUS_FRAME_SIZE, encoded, encoded.capacity());

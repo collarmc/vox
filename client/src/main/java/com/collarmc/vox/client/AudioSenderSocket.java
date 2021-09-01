@@ -6,6 +6,7 @@ import com.collarmc.vox.audio.devices.InputDevice;
 import com.collarmc.vox.audio.opus.OpusCodec;
 import com.collarmc.vox.audio.opus.OpusEncoder;
 import com.collarmc.vox.audio.opus.OpusSettings;
+import com.collarmc.vox.audio.rnnoise.Denoise;
 import com.collarmc.vox.protocol.AudioPacket;
 import com.collarmc.vox.protocol.SourceAudioPacket;
 import com.collarmc.vox.security.Cipher;
@@ -22,6 +23,8 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.TargetDataLine;
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,6 +37,7 @@ class AudioSenderSocket extends WebSocketListener implements Closeable {
     private final Channel channel;
     private final OpusCodec codec = new OpusCodec();
     private final Encoder encoder = new OpusEncoder(codec);
+    private final Denoise denoise = new Denoise();
     private Thread worker;
 
     public AudioSenderSocket(InputDevice inputDevice, Cipher cipher, Caller caller, Channel channel) {
@@ -62,6 +66,7 @@ class AudioSenderSocket extends WebSocketListener implements Closeable {
     @Override
     public void close() throws IOException {
         encoder.close();
+        denoise.close();
     }
 
     public class InputSourceWorker implements Runnable {
@@ -98,12 +103,14 @@ class AudioSenderSocket extends WebSocketListener implements Closeable {
                         byte[] buff = new byte[OpusSettings.OPUS_BUFFER_SIZE];
 
                         int read = audioStream.read(buff, 0, buff.length);
+
                         AudioPacket audioPacket;
                         if (read < 0) {
                             audioPacket = AudioPacket.SILENCE;
                         } else {
-                            audioPacket = encoder.encodePacket(buff, bytes -> cipher.crypt(caller, channel, bytes));
+                            audioPacket = encoder.encodePacket(denoise.denoiseBuffer(buff), bytes -> cipher.crypt(caller, channel, bytes));
                         }
+                        System.out.println(denoise.getFrameSize());
                         SourceAudioPacket packet = new SourceAudioPacket(caller, channel, audioPacket);
                         try {
                             webSocket.send(ByteString.of(packet.serialize()));

@@ -63,7 +63,7 @@
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
-                <version>5.7.0</version>
+                <version>${jna.version}</version>
             </dependency>
 
             <!-- http -->
@@ -129,6 +129,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <opus.version>1.0.5</opus.version>
         <jackson.version>2.11.2</jackson.version>
+        <jna.version>5.7.0</jna.version>
     </properties>
 
     <repositories>

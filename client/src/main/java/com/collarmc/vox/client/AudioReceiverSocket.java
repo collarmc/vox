@@ -19,6 +19,7 @@ import com.collarmc.vox.audio.Decoder;
 import com.collarmc.vox.protocol.IdentifyPacket;
 import com.collarmc.vox.protocol.OutputAudioPacket;
 
+import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import java.io.Closeable;
@@ -98,6 +99,7 @@ class AudioReceiverSocket extends WebSocketListener implements Closeable {
                     throw new RuntimeException(e);
                 }
                 line.start();
+
                 while (true) {
                     OutputAudioPacket packet = packets.poll();
                     if (packet == null) {
