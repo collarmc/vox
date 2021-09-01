@@ -1,4 +1,4 @@
-package com.collarmc.vox.audio.jna;
+package com.collarmc.vox.jna;
 
 import com.google.common.io.ByteStreams;
 import com.sun.jna.Native;

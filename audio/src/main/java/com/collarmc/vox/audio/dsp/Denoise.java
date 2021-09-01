@@ -1,7 +1,7 @@
 package com.collarmc.vox.audio.dsp;
 
-import com.collarmc.vox.audio.jna.CLibrary;
-import com.collarmc.vox.audio.jna.LibraryLoader;
+import com.collarmc.vox.jna.CLibrary;
+import com.collarmc.vox.jna.LibraryLoader;
 import com.google.common.io.ByteStreams;
 import com.sun.jna.Library;
 import com.sun.jna.ptr.PointerByReference;
