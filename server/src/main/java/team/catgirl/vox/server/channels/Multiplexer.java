@@ -3,6 +3,7 @@ package team.catgirl.vox.server.channels;
 import team.catgirl.vox.api.Caller;
 import team.catgirl.vox.api.Channel;
 import team.catgirl.vox.api.http.ChannelService;
+import team.catgirl.vox.audio.opus.OpusCodec;
 import team.catgirl.vox.audio.opus.OpusMixer;
 import team.catgirl.vox.protocol.AudioPacket;
 import team.catgirl.vox.audio.Mixer;
@@ -73,7 +74,8 @@ public class Multiplexer {
     private static class ChannelProcessor implements Runnable, Closeable {
         private final ChannelState state;
         private final BiConsumer<Channel, List<AudioStreamPacket>> packetConsumer;
-        private final Mixer mixer = new OpusMixer();
+        private final OpusCodec codec = new OpusCodec();
+        private final Mixer mixer = new OpusMixer(codec);
 
         public ChannelProcessor(ChannelState state, BiConsumer<Channel, List<AudioStreamPacket>> packetConsumer) {
             this.state = state;

@@ -2,12 +2,10 @@ package team.catgirl.vox.audio.opus;
 
 import com.sun.jna.ptr.PointerByReference;
 import team.catgirl.vox.api.Caller;
-import team.catgirl.vox.audio.AudioException;
 import team.catgirl.vox.audio.Mixer;
 import team.catgirl.vox.protocol.AudioPacket;
 import team.catgirl.vox.protocol.AudioStreamPacket;
 import team.catgirl.vox.protocol.OutputAudioPacket;
-import tomp2p.opuswrapper.Opus;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -18,12 +16,14 @@ public class OpusMixer implements Mixer {
 
     public static final int BUFFER_SIZE = 1276;
 
+    private final OpusCodec codec;
     private final PointerByReference opusRepacketizerPrt;
     private final ByteBuffer buffer;
 
-    public OpusMixer() {
+    public OpusMixer(OpusCodec codec) {
+        this.codec = codec;
         this.buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
-        this.opusRepacketizerPrt = Opus.INSTANCE.opus_repacketizer_create();
+        this.opusRepacketizerPrt = codec.opus_repacketizer_create();
     }
 
     @Override
@@ -45,11 +45,11 @@ public class OpusMixer implements Mixer {
         for (AudioStreamPacket packet : streamPackets) {
             System.out.print('r');
             byte[] bytes = transformer.apply(packet);
-            int result = Opus.INSTANCE.opus_repacketizer_cat(opusRepacketizerPrt, bytes, bytes.length);
-            AudioException.assertOpusError(result);
+            int result = codec.opus_repacketizer_cat(opusRepacketizerPrt, bytes, bytes.length);
+            OpusCodec.assertOpusError(result);
         }
-        int read = Opus.INSTANCE.opus_repacketizer_out(this.opusRepacketizerPrt, buffer, buffer.capacity());
-        AudioException.assertOpusError(read);
+        int read = codec.opus_repacketizer_out(this.opusRepacketizerPrt, buffer, buffer.capacity());
+        OpusCodec.assertOpusError(read);
         buffer.flip();
         byte[] out = new byte[buffer.limit()];
         buffer.get(out);
@@ -68,6 +68,6 @@ public class OpusMixer implements Mixer {
 
     @Override
     public void close() {
-        Opus.INSTANCE.opus_repacketizer_destroy(opusRepacketizerPrt);
+        codec.opus_repacketizer_destroy(opusRepacketizerPrt);
     }
 }

@@ -5,6 +5,7 @@ import org.junit.Test;
 import team.catgirl.vox.audio.devices.Devices;
 import team.catgirl.vox.audio.devices.InputDevice;
 import team.catgirl.vox.audio.devices.OutputDevice;
+import team.catgirl.vox.audio.opus.OpusCodec;
 import team.catgirl.vox.audio.opus.OpusEncoder;
 import team.catgirl.vox.audio.opus.OpusDecoder;
 import team.catgirl.vox.audio.opus.OpusSettings;
@@ -24,7 +25,7 @@ public class RoundTripTest {
     @Test
     @Ignore
     public void roundTrip() throws Exception {
-        OpusSettings.initializeCodec();
+        OpusCodec codec = new OpusCodec();
 
         // A classy song to play while griefing a base
         URL song = RoundTripTest.class.getClassLoader().getResource("song.wav");
@@ -36,8 +37,8 @@ public class RoundTripTest {
             AudioFormat format = new AudioFormat(44100, 16, 2, true, false);
             int sampleSize = (int) ((format.getSampleRate() / format.getSampleSizeInBits()) * format.getChannels());
             byte[] bytes = new byte[sampleSize];
-            try (Encoder encoder = new OpusEncoder()) {
-                try (Decoder decoder = new OpusDecoder()) {
+            try (Encoder encoder = new OpusEncoder(codec)) {
+                try (Decoder decoder = new OpusDecoder(codec)) {
                     try (SourceDataLine sourceLine = AudioSystem.getSourceDataLine(format)) {
                         sourceLine.open();
                         sourceLine.start();
