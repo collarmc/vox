@@ -1,5 +1,6 @@
 package team.catgirl.vox.audio;
 
+import com.sun.jna.Native;
 import org.junit.Ignore;
 import org.junit.Test;
 import team.catgirl.vox.audio.devices.Devices;
@@ -11,12 +12,9 @@ import team.catgirl.vox.audio.opus.OpusDecoder;
 import team.catgirl.vox.audio.opus.OpusSettings;
 import team.catgirl.vox.protocol.AudioPacket;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.SourceDataLine;
-import javax.sound.sampled.TargetDataLine;
+import javax.sound.sampled.*;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 
 
@@ -33,16 +31,27 @@ public class RoundTripTest {
             throw new IOException("could not find song");
         }
 
-        try (InputStream audioStream = song.openStream()) {
-            AudioFormat format = new AudioFormat(44100, 16, 2, true, false);
-            int sampleSize = (int) ((format.getSampleRate() / format.getSampleSizeInBits()) * format.getChannels());
-            byte[] bytes = new byte[sampleSize];
+        try (AudioInputStream inputStream = AudioSystem.getAudioInputStream(song)) {
+
+            final AudioFormat targetFormat = new AudioFormat(
+                    inputStream.getFormat().getEncoding(),
+                    OpusSettings.OPUS_SAMPLE_RATE, // target sample rate
+                    inputStream.getFormat().getSampleSizeInBits(),
+                    inputStream.getFormat().getChannels(),
+                    inputStream.getFormat().getFrameSize(),
+                    inputStream.getFormat().getFrameRate(), // target frame rate
+                    inputStream.getFormat().isBigEndian()
+            );
+
+            AudioInputStream resampledStream = AudioSystem.getAudioInputStream(targetFormat, inputStream);
+
+            byte[] bytes = new byte[OpusSettings.OPUS_BUFFER_SIZE];
             try (Encoder encoder = new OpusEncoder(codec)) {
                 try (Decoder decoder = new OpusDecoder(codec)) {
-                    try (SourceDataLine sourceLine = AudioSystem.getSourceDataLine(format)) {
+                    try (SourceDataLine sourceLine = AudioSystem.getSourceDataLine(targetFormat)) {
                         sourceLine.open();
                         sourceLine.start();
-                        while (audioStream.read(bytes) >= 0) {
+                        while (resampledStream.read(bytes) >= 0) {
                             AudioPacket audioPacket = encoder.encodePacket(bytes, bytes1 -> bytes1);
                             byte[] output = decoder.decode(audioPacket, decoded -> decoded);
                             sourceLine.write(output, 0, output.length);

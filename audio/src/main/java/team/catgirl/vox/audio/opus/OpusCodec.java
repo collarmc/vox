@@ -27,7 +27,7 @@ public final class OpusCodec {
             boolean printVersion = !OpusLibrary.isInitialized();
             OpusLibrary.loadFromJar();
             if (printVersion) {
-                LOGGER.info("Opus version " + Opus.INSTANCE.opus_get_version_string());
+                LOGGER.info(Opus.INSTANCE.opus_get_version_string());
             }
         } catch (IOException e) {
             throw new IllegalStateException("could not load opus", e);

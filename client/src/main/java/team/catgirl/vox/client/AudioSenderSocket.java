@@ -9,12 +9,16 @@ import team.catgirl.vox.api.Caller;
 import team.catgirl.vox.api.Channel;
 import team.catgirl.vox.audio.opus.OpusCodec;
 import team.catgirl.vox.audio.opus.OpusEncoder;
+import team.catgirl.vox.audio.opus.OpusSettings;
 import team.catgirl.vox.security.Cipher;
 import team.catgirl.vox.protocol.AudioPacket;
 import team.catgirl.vox.audio.Encoder;
 import team.catgirl.vox.audio.devices.InputDevice;
 import team.catgirl.vox.protocol.SourceAudioPacket;
 
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.TargetDataLine;
 import java.io.Closeable;
 import java.io.IOException;
@@ -79,25 +83,36 @@ class AudioSenderSocket extends WebSocketListener implements Closeable {
                     line.open();
                     line.start();
                 }
-                while (true) {
-                    byte[] buff = new byte[OPUS_FRAME_SIZE * 4];
-                    int read = line.read(buff, 0, buff.length);
-                    AudioPacket audioPacket;
-                    if (read < 0) {
-                        audioPacket = AudioPacket.SILENCE;
-                    } else {
-                        audioPacket = encoder.encodePacket(buff, bytes -> cipher.crypt(caller, channel, bytes));
-                    }
-                    SourceAudioPacket packet = new SourceAudioPacket(caller, channel, audioPacket);
-                    try {
-                        webSocket.send(ByteString.of(packet.serialize()));
-                    } catch (Throwable e) {
-                        LOGGER.log(Level.SEVERE, "could not serialize packet", e);
-                    }
-                    try {
-                        Thread.sleep(TimeUnit.MILLISECONDS.toMillis(50));
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+
+                AudioInputStream inputStream = new AudioInputStream(line);
+
+                final AudioFormat targetFormat = new AudioFormat(
+                        inputStream.getFormat().getEncoding(),
+                        OpusSettings.OPUS_SAMPLE_RATE, // target sample rate
+                        inputStream.getFormat().getSampleSizeInBits(),
+                        inputStream.getFormat().getChannels(),
+                        inputStream.getFormat().getFrameSize(),
+                        inputStream.getFormat().getFrameRate(), // target frame rate
+                        inputStream.getFormat().isBigEndian()
+                );
+                // Sample up or down for OPUS encoding
+                try (AudioInputStream audioStream = AudioSystem.getAudioInputStream(targetFormat, inputStream)) {
+                    while (true) {
+                        byte[] buff = new byte[OpusSettings.OPUS_BUFFER_SIZE];
+
+                        int read = audioStream.read(buff, 0, buff.length);
+                        AudioPacket audioPacket;
+                        if (read < 0) {
+                            audioPacket = AudioPacket.SILENCE;
+                        } else {
+                            audioPacket = encoder.encodePacket(buff, bytes -> cipher.crypt(caller, channel, bytes));
+                        }
+                        SourceAudioPacket packet = new SourceAudioPacket(caller, channel, audioPacket);
+                        try {
+                            webSocket.send(ByteString.of(packet.serialize()));
+                        } catch (Throwable e) {
+                            LOGGER.log(Level.SEVERE, "could not serialize packet", e);
+                        }
                     }
                 }
             } catch (Throwable e) {

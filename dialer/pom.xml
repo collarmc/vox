@@ -21,6 +21,14 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>club.minnced</groupId>
+            <artifactId>opus-java-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>club.minnced</groupId>
+            <artifactId>opus-java-natives</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

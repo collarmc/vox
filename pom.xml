@@ -56,6 +56,11 @@
                 <version>${opus.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.tagtraum</groupId>
+                <artifactId>pcmsampledsp</artifactId>
+                <version>0.9.5</version>
+            </dependency>
+            <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
                 <version>5.7.0</version>
@@ -131,6 +136,11 @@
             <id>jcenter</id>
             <name>bintray-jcenter</name>
             <url>https://jcenter.bintray.com</url>
+        </repository>
+        <repository>
+            <id>beatunes</id>
+            <name>Beatunes</name>
+            <url>https://www.beatunes.com/repo/maven2</url>
         </repository>
     </repositories>
 </project>

@@ -17,6 +17,10 @@
             <artifactId>opus-java-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.tagtraum</groupId>
+            <artifactId>pcmsampledsp</artifactId>
+        </dependency>
+        <dependency>
             <groupId>club.minnced</groupId>
             <artifactId>opus-java-natives</artifactId>
         </dependency>

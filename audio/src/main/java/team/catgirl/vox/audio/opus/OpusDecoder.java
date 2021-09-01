@@ -23,12 +23,12 @@ public final class OpusDecoder implements Decoder {
 
     @Override
     public byte[] decode(AudioPacket packet, Function<byte[], byte[]> transformer) {
-        ByteBuffer backingBuffer = ByteBuffer.allocateDirect(4096);
-        ShortBuffer decoded = backingBuffer.asShortBuffer();
+        ByteBuffer buffer = ByteBuffer.allocateDirect(OpusSettings.OPUS_BUFFER_SIZE);
+        ShortBuffer decoded = buffer.asShortBuffer();
         int result = codec.opus_decode(decoderPtr, packet.bytes, packet.bytes.length, decoded, OpusSettings.OPUS_FRAME_SIZE, 0);
         OpusCodec.assertOpusError(result);
-        byte[] bytes = new byte[backingBuffer.limit()];
-        backingBuffer.get(bytes);
+        byte[] bytes = new byte[buffer.limit()];
+        buffer.get(bytes);
         return transformer.apply(bytes);
     }
 

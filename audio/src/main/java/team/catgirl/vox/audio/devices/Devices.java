@@ -1,6 +1,7 @@
 package team.catgirl.vox.audio.devices;
 
 import team.catgirl.vox.audio.AudioException;
+import team.catgirl.vox.audio.opus.OpusSettings;
 
 import javax.sound.sampled.*;
 import java.util.ArrayList;
@@ -8,8 +9,8 @@ import java.util.List;
 
 public final class Devices {
 
-    private static final AudioFormat OUTPUT_FORMAT = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 16000.0F, 16, 1, 2, 16000.0F, false);
-    private static final AudioFormat INPUT_FORMAT = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 16000.0F, 16, 1, 2, 16000.0F, false);
+    private static final AudioFormat OUTPUT_FORMAT = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, OpusSettings.OPUS_SAMPLE_RATE, 16, OpusSettings.OPUS_CHANNEL_COUNT, OpusSettings.OPUS_FRAME_SIZE, 16000.0F, false);
+    private static final AudioFormat INPUT_FORMAT = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 16000.0F, 16, OpusSettings.OPUS_CHANNEL_COUNT, OpusSettings.OPUS_FRAME_SIZE, 16000.0F, false);
 
     private final List<InputDevice> inputDevices = new ArrayList<>();
     private final List<OutputDevice> outputDevices = new ArrayList<>();
