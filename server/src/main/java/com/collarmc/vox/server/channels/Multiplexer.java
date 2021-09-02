@@ -93,12 +93,6 @@ public class Multiplexer {
                             })
                             .collect(Collectors.toList());
                     packetConsumer.accept(state.channel, packetList);
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        packetConsumer.accept(state.channel, null);
-                        throw new RuntimeException(e);
-                    }
                 }
             } catch (Throwable e) {
                 e.printStackTrace();
