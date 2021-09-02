@@ -1,12 +1,12 @@
 package com.collarmc.vox.audio.opus;
 
-import com.sun.jna.ptr.PointerByReference;
 import com.collarmc.vox.audio.Encoder;
+import com.collarmc.vox.audio.Filter;
 import com.collarmc.vox.protocol.AudioPacket;
+import com.sun.jna.ptr.PointerByReference;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.function.Function;
 
 import static tomp2p.opuswrapper.Opus.OPUS_APPLICATION_AUDIO;
 
@@ -22,17 +22,17 @@ public final class OpusEncoder implements Encoder {
         OpusCodec.assertOpusError(error.get());
     }
 
-    public AudioPacket encodePacket(byte[] rawAudio, Function<byte[], byte[]> transformer) {
+    public AudioPacket encodePacket(byte[] rawAudio) {
         ByteBuffer nonEncodedBuffer = ByteBuffer.allocateDirect(rawAudio.length);
         nonEncodedBuffer.put(rawAudio);
         nonEncodedBuffer.flip();
 
-        ByteBuffer encoded = ByteBuffer.allocateDirect(4096);
+        ByteBuffer encoded = ByteBuffer.allocateDirect(OpusSettings.OPUS_BUFFER_SIZE);
         int result = codec.opus_encode(encoder, nonEncodedBuffer.asShortBuffer(), OpusSettings.OPUS_FRAME_SIZE, encoded, encoded.capacity());
         OpusCodec.assertOpusError(result);
         byte[] encodedByte = new byte[result];
         encoded.get(encodedByte);
-        return AudioPacket.fromEncodedBytes(transformer.apply(encodedByte));
+        return AudioPacket.fromEncodedBytes(encodedByte);
     }
 
     @Override

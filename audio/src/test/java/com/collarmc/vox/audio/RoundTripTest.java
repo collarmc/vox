@@ -2,11 +2,13 @@ package com.collarmc.vox.audio;
 
 import com.collarmc.vox.audio.devices.InputDevice;
 import com.collarmc.vox.audio.devices.OutputDevice;
+import com.collarmc.vox.audio.dsp.EchoCanceller;
 import com.collarmc.vox.audio.opus.OpusCodec;
 import com.collarmc.vox.audio.opus.OpusDecoder;
 import com.collarmc.vox.audio.opus.OpusEncoder;
 import com.collarmc.vox.audio.opus.OpusSettings;
 import com.collarmc.vox.protocol.AudioPacket;
+import org.apache.commons.codec.binary.Hex;
 import org.junit.Ignore;
 import org.junit.Test;
 import com.collarmc.vox.audio.devices.Devices;
@@ -50,8 +52,8 @@ public class RoundTripTest {
                         sourceLine.open();
                         sourceLine.start();
                         while (resampledStream.read(bytes) >= 0) {
-                            AudioPacket audioPacket = encoder.encodePacket(bytes, bytes1 -> bytes1);
-                            byte[] output = decoder.decode(audioPacket, decoded -> decoded);
+                            AudioPacket audioPacket = encoder.encodePacket(bytes);
+                            byte[] output = decoder.decode(audioPacket);
                             sourceLine.write(output, 0, output.length);
                         }
                         sourceLine.stop();
@@ -62,24 +64,34 @@ public class RoundTripTest {
     }
 
     @Test
-    @Ignore
     public void echoTest() throws Exception {
         Devices devices = new Devices();
         InputDevice inputDevice = devices.getDefaultInputDevice();
         System.out.println("Input Device " + inputDevice.getName() + " " + inputDevice.getVendor());
+
+        OutputDevice outputDevice = devices.getDefaultOutputDevice();
+        System.out.println("Output Device " + outputDevice.getName() + " " + outputDevice.getVendor());
+
         try (TargetDataLine inputLine = inputDevice.getLine()) {
             inputLine.open();
             inputLine.start();
 
-            byte[] bytes = new byte[inputLine.getBufferSize() / 5];
+            int filterLength = (int) (inputDevice.getLine().getFormat().getSampleRate());
+            EchoCanceller echoCanceller = new EchoCanceller(inputDevice.getLine().getFormat().getFrameSize(), filterLength, inputDevice, outputDevice);
 
-            OutputDevice outputDevice = devices.getDefaultOutputDevice();
-            System.out.println("Output Device " + outputDevice.getName() + " " + outputDevice.getVendor());
+            byte[] bytes = new byte[inputDevice.getLine().getFormat().getFrameSize()];
+
             try (SourceDataLine outputLine = outputDevice.getLine()) {
                 outputLine.open();
                 outputLine.start();
                 while (inputLine.read(bytes, 0, bytes.length) >= 0) {
-                    outputLine.write(bytes, 0, bytes.length);
+
+                    System.out.println("mic " + Hex.encodeHexString(bytes));
+                    byte[] canceled = echoCanceller.processMicrophoneInput(bytes);
+                    System.out.println("spk " + Hex.encodeHexString(canceled));
+//                    echoCanceller.captureOutputToSoundCard(canceled);
+                    outputLine.write(canceled, 0, canceled.length);
+                    echoCanceller.captureOutputToSoundCard(canceled);
                 }
             }
         }

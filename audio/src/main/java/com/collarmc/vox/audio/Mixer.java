@@ -15,10 +15,9 @@ public interface Mixer extends Closeable {
     /**
      * Mixes multiple AudioStreamPacket's into a single AudioPacket
      * @param packets to mix
-     * @param transformer to apply to each audio stream packet
      * @return packet ready for playback
      */
-    AudioPacket mix(OutputAudioPacket packets, Function<AudioStreamPacket, byte[]> transformer);
+    AudioPacket mix(OutputAudioPacket packets);
 
     /**
      * Mute a caller

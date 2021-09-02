@@ -1,5 +1,8 @@
 package com.collarmc.vox.client;
 
+import com.collarmc.vox.audio.dsp.Denoise;
+import com.collarmc.vox.audio.dsp.EchoCanceller;
+import com.google.common.collect.ImmutableList;
 import io.mikael.urlbuilder.UrlBuilder;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -14,6 +17,8 @@ import com.collarmc.vox.audio.devices.OutputDevice;
 import java.io.Closeable;
 import java.io.IOException;
 
+import static com.collarmc.vox.audio.opus.OpusSettings.OPUS_FRAME_SIZE;
+
 public final class Vox implements Closeable {
 
     static {
@@ -24,14 +29,18 @@ public final class Vox implements Closeable {
     private final UrlBuilder baseUrl;
     private final AudioSenderSocket senderSocket;
     private final AudioReceiverSocket receiverSocket;
+    private final EchoCanceller echoCanceller;
+    private final Denoise denoise;
     WebSocket audioSenderSocket;
     WebSocket audioReceiverSocket;
 
     public Vox(OkHttpClient http, String baseUrl, byte[] token, Caller identity, Channel channel, InputDevice inputDevice, OutputDevice outputDevice, Cipher cipher) {
         this.http = http;
         this.baseUrl = UrlBuilder.fromString(baseUrl);
-        this.senderSocket = new AudioSenderSocket(inputDevice, cipher, identity, channel);
-        this.receiverSocket = new AudioReceiverSocket(outputDevice, cipher, identity, channel, token);
+        this.denoise = new Denoise();
+        this.echoCanceller = new EchoCanceller(inputDevice.getLine().getFormat().getFrameSize(), (int) (inputDevice.getLine().getFormat().getSampleRate()), inputDevice, outputDevice);
+        this.senderSocket = new AudioSenderSocket(inputDevice, cipher, identity, channel, ImmutableList.of());
+        this.receiverSocket = new AudioReceiverSocket(outputDevice, cipher, identity, channel, token, this.echoCanceller);
     }
 
     /**
@@ -58,6 +67,8 @@ public final class Vox implements Closeable {
     public void close() throws IOException {
         receiverSocket.close();
         senderSocket.close();
+        denoise.close();
+        echoCanceller.close();
         disconnect();
     }
 }

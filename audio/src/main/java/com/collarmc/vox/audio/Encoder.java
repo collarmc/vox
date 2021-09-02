@@ -12,8 +12,7 @@ public interface Encoder extends Closeable {
     /**
      * Produces an opus audio packet
      * @param rawAudio audio
-     * @param transformer for byte payload
      * @return byte buffer containing opus audio packet
      */
-    AudioPacket encodePacket(byte[] rawAudio, Function<byte[], byte[]> transformer);
+    AudioPacket encodePacket(byte[] rawAudio);
 }

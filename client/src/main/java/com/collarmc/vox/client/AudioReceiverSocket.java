@@ -1,6 +1,7 @@
 package com.collarmc.vox.client;
 
 import com.collarmc.vox.audio.devices.OutputDevice;
+import com.collarmc.vox.audio.dsp.EchoCanceller;
 import com.collarmc.vox.audio.opus.OpusCodec;
 import okhttp3.Response;
 import okhttp3.WebSocket;
@@ -37,18 +38,20 @@ class AudioReceiverSocket extends WebSocketListener implements Closeable {
     private final Caller identity;
     private final Channel channel;
     private final byte[] token;
+    private final EchoCanceller canceller;
     private final OpusCodec codec = new OpusCodec();
     private final Decoder decoder = new OpusDecoder(codec);
     private final Mixer mixer = new OpusMixer(codec);
     private final LinkedBlockingDeque<OutputAudioPacket> packets = new LinkedBlockingDeque<>(Short.MAX_VALUE);
     private final Thread soundPlayer = new Thread(new SoundPlayer());
 
-    public AudioReceiverSocket(OutputDevice outputDevice, Cipher cipher, Caller identity, Channel channel, byte[] token) {
+    public AudioReceiverSocket(OutputDevice outputDevice, Cipher cipher, Caller identity, Channel channel, byte[] token, EchoCanceller canceller) {
         this.outputDevice = outputDevice;
         this.cipher = cipher;
         this.identity = identity;
         this.channel = channel;
         this.token = token;
+        this.canceller = canceller;
     }
 
     @Override
@@ -105,12 +108,13 @@ class AudioReceiverSocket extends WebSocketListener implements Closeable {
                     if (packet == null) {
                         continue;
                     }
-                    AudioPacket audioPacket = mixer.mix(packet, streamPacket -> cipher.decrypt(streamPacket.owner, packet.channel, streamPacket.audio.bytes));
+                    AudioPacket audioPacket = mixer.mix(packet);
                     if (audioPacket.isEmpty()) {
                         continue;
                     }
-                    byte[] pcm = decoder.decode(audioPacket, bytes -> bytes);
+                    byte[] pcm = decoder.decode(audioPacket);
                     line.write(pcm, 0, pcm.length);
+                    canceller.captureOutputToSoundCard(pcm);
                 }
             }
         }
