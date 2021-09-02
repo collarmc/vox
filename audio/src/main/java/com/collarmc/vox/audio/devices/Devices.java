@@ -38,19 +38,8 @@ public final class Devices {
      * @return default input device
      */
     public InputDevice getDefaultInputDevice() {
-        TargetDataLine line;
-        final DataLine.Info info = new DataLine.Info(TargetDataLine.class, OUTPUT_FORMAT);
-        if (!AudioSystem.isLineSupported(info)) {
-            throw new AudioException("input device not found");
-        }
-        try {
-            line = (TargetDataLine) AudioSystem.getLine(info);
-        } catch (final Exception ex) {
-            throw new AudioException("input device not found");
-        }
         refresh();
         return inputDevices.stream()
-                .filter(inputDevice -> inputDevice.getLine().getLineInfo().equals(line.getLineInfo()))
                 .findFirst()
                 .orElseThrow(() -> new AudioException("input device not found"));
     }
@@ -59,19 +48,8 @@ public final class Devices {
      * @return default output device
      */
     public OutputDevice getDefaultOutputDevice() {
-        SourceDataLine line;
-        final DataLine.Info info = new DataLine.Info(SourceDataLine.class, OUTPUT_FORMAT);
-        if (!AudioSystem.isLineSupported(info)) {
-            throw new AudioException("input device not found");
-        }
-        try {
-            line = (SourceDataLine) AudioSystem.getLine(info);
-        } catch (final Exception ex) {
-            throw new AudioException("input device not found");
-        }
         refresh();
         return outputDevices.stream()
-                .filter(outputDevice -> outputDevice.getLine().getLineInfo().equals(line.getLineInfo()))
                 .findFirst()
                 .orElseThrow(() -> new AudioException("output device not found"));
     }

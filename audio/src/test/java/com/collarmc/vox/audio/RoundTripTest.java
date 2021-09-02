@@ -66,15 +66,14 @@ public class RoundTripTest {
     public void echoTest() throws Exception {
         Devices devices = new Devices();
         InputDevice inputDevice = devices.getDefaultInputDevice();
+        OutputDevice outputDevice = devices.getDefaultOutputDevice();
         System.out.println("Input Device " + inputDevice.getName() + " " + inputDevice.getVendor());
+        System.out.println("Output Device " + outputDevice.getName() + " " + outputDevice.getVendor());
         try (TargetDataLine inputLine = inputDevice.getLine()) {
             inputLine.open();
             inputLine.start();
 
             byte[] bytes = new byte[inputLine.getBufferSize() / 5];
-
-            OutputDevice outputDevice = devices.getDefaultOutputDevice();
-            System.out.println("Output Device " + outputDevice.getName() + " " + outputDevice.getVendor());
             try (SourceDataLine outputLine = outputDevice.getLine()) {
                 outputLine.open();
                 outputLine.start();

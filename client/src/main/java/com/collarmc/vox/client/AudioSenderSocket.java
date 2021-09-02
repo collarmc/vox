@@ -108,7 +108,6 @@ class AudioSenderSocket extends WebSocketListener implements Closeable {
                         } else {
                             audioPacket = encoder.encodePacket(buff, bytes -> cipher.crypt(caller, channel, bytes));
                         }
-                        System.out.println(denoise.getFrameSize());
                         SourceAudioPacket packet = new SourceAudioPacket(caller, channel, audioPacket);
                         try {
                             webSocket.send(ByteString.of(packet.serialize()));
