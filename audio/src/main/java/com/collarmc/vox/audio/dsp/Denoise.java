@@ -85,9 +85,9 @@ public final class Denoise implements Closeable {
         void rnnoise_model_free(RNNModel model);
     }
 
-    static class DenoiseState extends PointerByReference {}
+    public static class DenoiseState extends PointerByReference {}
 
-    static class RNNModel extends PointerByReference {}
+    public static class RNNModel extends PointerByReference {}
 
     private static File unpackModel() {
         File model;
