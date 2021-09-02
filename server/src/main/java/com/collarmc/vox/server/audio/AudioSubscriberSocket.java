@@ -29,7 +29,6 @@ public class AudioSubscriberSocket {
 
     @OnWebSocketMessage
     public void receivePacket(Session session, InputStream stream) throws IOException {
-        LOGGER.log(Level.INFO, "Connection packet received");
         byte[] bytes = IO.toByteArray(stream);
         SourceAudioPacket packet = new SourceAudioPacket(bytes);
         multiplexer.receive(packet);
