@@ -1,10 +1,7 @@
 package com.collarmc.vox.server.audio;
 
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
+import org.eclipse.jetty.websocket.api.annotations.*;
 import com.collarmc.vox.api.Caller;
 import com.collarmc.vox.api.Channel;
 import com.collarmc.vox.api.http.ChannelService;
@@ -59,6 +56,11 @@ public class AudioProducerSocket {
             ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
             session.getRemote().sendBytesByFuture(byteBuffer);
         });
+    }
+
+    @OnWebSocketConnect
+    public void onConnected(Session session) {
+        LOGGER.log(Level.INFO, "Producer connection established");
     }
 
     @OnWebSocketMessage
