@@ -1,5 +1,6 @@
 package com.collarmc.vox.audio.dsp;
 
+import com.collarmc.vox.audio.Filter;
 import com.collarmc.vox.jna.CLibrary;
 import com.collarmc.vox.jna.LibraryLoader;
 import com.google.common.io.ByteStreams;
@@ -10,7 +11,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
-public final class Denoise implements Closeable {
+public final class Denoise implements Filter, Closeable {
 
     private final RNNoiseNative noise;
     private final RNNModel model;
@@ -27,6 +28,11 @@ public final class Denoise implements Closeable {
         }
         state = noise.rnnoise_create(model);
         noise.rnnoise_init(state, model);
+    }
+
+    @Override
+    public byte[] filter(byte[] frameBuffer) {
+        return denoiseBuffer(frameBuffer);
     }
 
     /**
@@ -85,9 +91,9 @@ public final class Denoise implements Closeable {
         void rnnoise_model_free(RNNModel model);
     }
 
-    static class DenoiseState extends PointerByReference {}
+    public static class DenoiseState extends PointerByReference {}
 
-    static class RNNModel extends PointerByReference {}
+    public static class RNNModel extends PointerByReference {}
 
     private static File unpackModel() {
         File model;

@@ -2,6 +2,10 @@ package com.collarmc.vox.audio.devices;
 
 import javax.sound.sampled.Mixer;
 
+/**
+ * Base device type
+ * @param <T>
+ */
 public abstract class Device<T> {
     private final T line;
     private final Mixer.Info info;

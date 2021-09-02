@@ -2,7 +2,9 @@ package com.collarmc.vox.client;
 
 import com.collarmc.vox.api.Caller;
 import com.collarmc.vox.api.Channel;
+import com.collarmc.vox.audio.Filter;
 import com.collarmc.vox.audio.devices.InputDevice;
+import com.collarmc.vox.audio.dsp.EchoCanceller;
 import com.collarmc.vox.audio.opus.OpusCodec;
 import com.collarmc.vox.audio.opus.OpusEncoder;
 import com.collarmc.vox.audio.opus.OpusSettings;
@@ -23,6 +25,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.TargetDataLine;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,16 +36,17 @@ class AudioSenderSocket extends WebSocketListener implements Closeable {
     private final Cipher cipher;
     private final Caller caller;
     private final Channel channel;
+    private final List<Filter> inputFilters;
     private final OpusCodec codec = new OpusCodec();
     private final Encoder encoder = new OpusEncoder(codec);
-    private final Denoise denoise = new Denoise();
     private Thread worker;
 
-    public AudioSenderSocket(InputDevice inputDevice, Cipher cipher, Caller caller, Channel channel) {
+    public AudioSenderSocket(InputDevice inputDevice, Cipher cipher, Caller caller, Channel channel, List<Filter> inputFilters) {
         this.inputDevice = inputDevice;
         this.cipher = cipher;
         this.caller = caller;
         this.channel = channel;
+        this.inputFilters = inputFilters;
     }
 
     @Override
@@ -64,7 +68,6 @@ class AudioSenderSocket extends WebSocketListener implements Closeable {
     @Override
     public void close() throws IOException {
         encoder.close();
-        denoise.close();
     }
 
     public class InputSourceWorker implements Runnable {
@@ -106,9 +109,12 @@ class AudioSenderSocket extends WebSocketListener implements Closeable {
                         if (read < 0) {
                             audioPacket = AudioPacket.SILENCE;
                         } else {
-                            audioPacket = encoder.encodePacket(denoise.denoiseBuffer(buff), bytes -> cipher.crypt(caller, channel, bytes));
+                            byte[] rawAudio = buff;
+                            for (Filter filter : inputFilters) {
+                                rawAudio = filter.filter(rawAudio);
+                            }
+                            audioPacket = encoder.encodePacket(rawAudio);
                         }
-                        System.out.println(denoise.getFrameSize());
                         SourceAudioPacket packet = new SourceAudioPacket(caller, channel, audioPacket);
                         try {
                             webSocket.send(ByteString.of(packet.serialize()));

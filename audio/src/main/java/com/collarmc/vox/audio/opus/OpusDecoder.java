@@ -1,5 +1,6 @@
 package com.collarmc.vox.audio.opus;
 
+import com.collarmc.vox.audio.Filter;
 import com.sun.jna.ptr.PointerByReference;
 import com.collarmc.vox.audio.Decoder;
 import com.collarmc.vox.protocol.AudioPacket;
@@ -22,14 +23,14 @@ public final class OpusDecoder implements Decoder {
     }
 
     @Override
-    public byte[] decode(AudioPacket packet, Function<byte[], byte[]> transformer) {
+    public byte[] decode(AudioPacket packet) {
         ByteBuffer buffer = ByteBuffer.allocateDirect(OpusSettings.OPUS_BUFFER_SIZE);
         ShortBuffer decoded = buffer.asShortBuffer();
         int result = codec.opus_decode(decoderPtr, packet.bytes, packet.bytes.length, decoded, OpusSettings.OPUS_FRAME_SIZE, 0);
         OpusCodec.assertOpusError(result);
         byte[] bytes = new byte[buffer.limit()];
         buffer.get(bytes);
-        return transformer.apply(bytes);
+        return bytes;
     }
 
     @Override

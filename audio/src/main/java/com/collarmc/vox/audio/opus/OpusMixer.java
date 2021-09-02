@@ -1,17 +1,15 @@
 package com.collarmc.vox.audio.opus;
 
+import com.collarmc.vox.api.Caller;
 import com.collarmc.vox.audio.Mixer;
+import com.collarmc.vox.protocol.AudioPacket;
 import com.collarmc.vox.protocol.AudioStreamPacket;
 import com.collarmc.vox.protocol.OutputAudioPacket;
 import com.sun.jna.ptr.PointerByReference;
-import com.collarmc.vox.api.Caller;
-import com.collarmc.vox.protocol.AudioPacket;
 
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class OpusMixer implements Mixer {
@@ -30,7 +28,7 @@ public class OpusMixer implements Mixer {
     }
 
     @Override
-    public AudioPacket mix(OutputAudioPacket packets, Function<AudioStreamPacket, byte[]> transformer) {
+    public AudioPacket mix(OutputAudioPacket packets) {
         // If there are no packets then return silence
         List<AudioStreamPacket> streamPackets = packets.streamPackets.stream()
                 .filter(packet -> !mutedCallers.contains(packet.owner))
@@ -44,14 +42,14 @@ public class OpusMixer implements Mixer {
         // If there is just one packet, no need to repacketize
         if (streamPackets.size() == 1) {
             System.out.print('1');
-            byte[] bytes = transformer.apply(packets.streamPackets.get(0));
+            byte[] bytes = packets.streamPackets.get(0).audio.bytes;
             return AudioPacket.fromEncodedBytes(bytes);
         }
 
         // Re-packetize multiple streams
         for (AudioStreamPacket packet : streamPackets) {
             System.out.print('r');
-            byte[] bytes = transformer.apply(packet);
+            byte[] bytes = packet.audio.bytes;
             int result = codec.opus_repacketizer_cat(opusRepacketizerPrt, bytes, bytes.length);
             OpusCodec.assertOpusError(result);
         }

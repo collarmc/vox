@@ -1,5 +1,8 @@
 package com.collarmc.vox.audio.dsp;
 
+import com.collarmc.vox.audio.Filter;
+import com.collarmc.vox.audio.devices.InputDevice;
+import com.collarmc.vox.audio.devices.OutputDevice;
 import com.collarmc.vox.jna.LibraryLoader;
 import com.sun.jna.Library;
 import com.sun.jna.ptr.PointerByReference;
@@ -12,14 +15,14 @@ import java.nio.ShortBuffer;
 /**
  * Echo canceller based on speexdsp
  */
-public final class EchoCanceller implements Closeable {
+public final class EchoCanceller implements Filter, Closeable {
 
     private final SpeexDSP dsp;
     private final SpeexEchoState st;
 
-    public EchoCanceller(int frameSize, int filterLength, int micCount, int speakerCount) {
+    public EchoCanceller(int frameSize, int filterLength, InputDevice inputDevice, OutputDevice outputDevice) {
         this.dsp = LibraryLoader.load("libspeexdsp", SpeexDSP.class);
-        this.st = dsp.speex_echo_state_init_mc(frameSize, filterLength, micCount, speakerCount);
+        this.st = dsp.speex_echo_state_init_mc(frameSize, filterLength, inputDevice.getLine().getFormat().getChannels(), outputDevice.getLine().getFormat().getChannels());
     }
 
     /**
@@ -28,13 +31,11 @@ public final class EchoCanceller implements Closeable {
      * @return processed frame
      */
     public byte[] processMicrophoneInput(byte[] frame) {
-        ByteBuffer buffer = ByteBuffer.allocateDirect(frame.length);
-        buffer.put(frame);
-        buffer.flip();
+        ByteBuffer rec = ByteBuffer.allocateDirect(frame.length);
+        rec.put(frame);
         ByteBuffer output = ByteBuffer.allocateDirect(frame.length);
-        dsp.speex_echo_capture(st, buffer.asShortBuffer(), output.asShortBuffer());
+        dsp.speex_echo_capture(st, rec.asShortBuffer(), output.asShortBuffer());
         byte[] out = new byte[frame.length];
-        output.flip();
         output.get(out);
         return out;
     }
@@ -53,6 +54,11 @@ public final class EchoCanceller implements Closeable {
     @Override
     public void close() throws IOException {
         dsp.speex_echo_state_destroy(st);
+    }
+
+    @Override
+    public byte[] filter(byte[] frameBuffer) {
+        return processMicrophoneInput(frameBuffer);
     }
 
     interface SpeexDSP extends Library {
