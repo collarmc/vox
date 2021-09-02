@@ -43,24 +43,15 @@ public class Multiplexer {
         if (!channelService.isPermitted(packet.channel, packet.owner)) {
             return;
         }
-        AtomicReference<ChannelState> newChannel = new AtomicReference<>();
-        channels.compute(packet.channel, (channelId, channelState) -> {
-            if (channelState == null) {
-                channelState = new ChannelState(channelId);
-                newChannel.set(channelState);
-            }
-            channelState.packetQueues.compute(packet.owner, (identityId, audioPackets) -> {
-                audioPackets = audioPackets == null ? new LinkedBlockingDeque<>(Short.MAX_VALUE) : audioPackets;
-                audioPackets.offer(packet.audio);
-                return audioPackets;
-            });
-            return channelState;
+        ChannelState channelState = channels.computeIfAbsent(packet.channel, channel -> {
+            ChannelState state = new ChannelState(packet.channel);
+            Future<?> future = consumerExecutor.submit(new ChannelProcessor(state, packetConsumer));
+            channelProcessors.put(state.channel, future);
+            return state;
         });
-        ChannelState channelState = newChannel.get();
-        if (channelState != null) {
-            Future<?> future = consumerExecutor.submit(new ChannelProcessor(channelState, packetConsumer));
-            channelProcessors.put(channelState.channel, future);
-        };
+        LinkedBlockingDeque<AudioPacket> audioPackets = channelState.packetQueues.computeIfAbsent(packet.owner, caller -> new LinkedBlockingDeque<>(Short.MAX_VALUE));
+        audioPackets.offer(packet.audio);
+        System.out.println(audioPackets.size());
     }
 
     public void stop(Channel channel) {
@@ -89,8 +80,12 @@ public class Multiplexer {
                     List<AudioStreamPacket> packetList = state.packetQueues.entrySet().stream()
                             .map(entry -> {
                                 AudioPacket packet = entry.getValue().poll();
-                                return new AudioStreamPacket(entry.getKey(), packet == null ? AudioPacket.SILENCE : packet);
+                                if (packet == null) {
+                                    return null;
+                                }
+                                return new AudioStreamPacket(entry.getKey(), packet);
                             })
+                            .filter(Objects::nonNull)
                             .collect(Collectors.toList());
                     packetConsumer.accept(state.channel, packetList);
                 }
