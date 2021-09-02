@@ -42,6 +42,9 @@ public final class Denoise implements Closeable {
      * @return frame
      */
     public byte[] denoiseBuffer(byte[] buff) {
+        if (buff.length == 0) {
+            return buff;
+        }
         int denoiseFrameSize = getFrameSize();
         for (int i = 0; i < buff.length; i+= denoiseFrameSize) {
             byte[] frame = new byte[denoiseFrameSize];
