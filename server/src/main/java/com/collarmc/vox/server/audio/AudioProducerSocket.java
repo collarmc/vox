@@ -54,11 +54,7 @@ public class AudioProducerSocket {
                 throw new IllegalStateException(e);
             }
             ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
-            try {
-                session.getRemote().sendBytes(byteBuffer);
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
+            session.getRemote().sendBytesByFuture(byteBuffer);
         });
     }
 
